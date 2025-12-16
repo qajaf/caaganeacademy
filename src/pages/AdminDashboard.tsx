@@ -1,19 +1,54 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import AdminLayout from "@/components/admin/AdminLayout";
+import AdminOverview from "@/components/admin/AdminOverview";
+import AdminStudents from "@/components/admin/AdminStudents";
+import AdminPlaylists from "@/components/admin/AdminPlaylists";
+import AdminBookings from "@/components/admin/AdminBookings";
 
 const AdminDashboard = () => {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!authLoading && !user) {
       navigate("/auth");
+      return;
     }
-  }, [user, loading, navigate]);
 
-  if (loading) {
+    if (user) {
+      checkAdminRole();
+    }
+  }, [user, authLoading, navigate]);
+
+  const checkAdminRole = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data?.role !== "admin") {
+        navigate("/dashboard");
+        return;
+      }
+
+      setIsAdmin(true);
+    } catch (error) {
+      console.error("Error checking admin role:", error);
+      navigate("/dashboard");
+    }
+  };
+
+  if (authLoading || isAdmin === null) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -21,11 +56,32 @@ const AdminDashboard = () => {
     );
   }
 
+  const renderContent = () => {
+    switch (activeTab) {
+      case "overview":
+        return <AdminOverview />;
+      case "students":
+        return <AdminStudents />;
+      case "playlists":
+        return <AdminPlaylists />;
+      case "bookings":
+        return <AdminBookings />;
+      case "settings":
+        return (
+          <div>
+            <h1 className="text-3xl font-display font-bold mb-2">Settings</h1>
+            <p className="text-muted-foreground">Coming soon...</p>
+          </div>
+        );
+      default:
+        return <AdminOverview />;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background p-8">
-      <h1 className="text-3xl font-display font-bold mb-4">Admin Dashboard</h1>
-      <p className="text-muted-foreground">Manage lessons, students, and more. Coming soon!</p>
-    </div>
+    <AdminLayout activeTab={activeTab} onTabChange={setActiveTab}>
+      {renderContent()}
+    </AdminLayout>
   );
 };
 
