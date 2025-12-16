@@ -100,7 +100,7 @@ const Settings = () => {
         .from("profiles")
         .update({
           full_name: formData.full_name,
-          language_level: formData.language_level,
+          language_level: formData.language_level as "beginner" | "elementary" | "intermediate" | "upper_intermediate" | "advanced",
           learning_duration_months: formData.learning_duration_months,
           country: formData.country,
           city: formData.city,
