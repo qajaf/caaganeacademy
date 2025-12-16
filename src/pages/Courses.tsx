@@ -143,14 +143,7 @@ const Courses = () => {
   };
 
   const handlePlaylistClick = (playlist: Playlist) => {
-    if (!profile?.is_approved) {
-      toast({
-        title: "Waxaad u baahan tahay ogolaanshaha",
-        description: "La xiriir WhatsApp: 626966559 si aad u bixiso lacagta $7/bilaha",
-        variant: "destructive",
-      });
-      return;
-    }
+    // Allow all students to view playlist contents
     setSelectedPlaylist(playlist);
     fetchLessons(playlist.id);
   };
@@ -158,8 +151,9 @@ const Courses = () => {
   const handleLessonClick = (lesson: Lesson) => {
     if (!profile?.is_approved) {
       toast({
-        title: "Waxaad u baahan tahay ogolaanshaha",
-        description: "La xiriir WhatsApp: 626966559 si aad u bixiso lacagta $7/bilaha",
+        title: "U baahan tahay lacag bixin",
+        description: "Si aad u daawato casharada, la xiriir WhatsApp: 626966559. Qiimaha: $7/bilaha",
+        variant: "destructive",
       });
       return;
     }
@@ -293,6 +287,26 @@ const Courses = () => {
             <p className="text-muted-foreground mb-6">{selectedPlaylist.description}</p>
           )}
 
+          {/* Payment Notice for Unapproved Users */}
+          {!profile?.is_approved && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 mb-6"
+            >
+              <div className="flex items-start gap-3">
+                <Lock className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-destructive">Casharada waa xiran yihiin</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Si aad u daawato casharada, la xiriir WhatsApp: <strong>626966559</strong>
+                  </p>
+                  <p className="text-sm text-muted-foreground">Qiimaha: <strong>$7/bilaha</strong></p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           {loadingLessons ? (
             <div className="flex justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -311,8 +325,8 @@ const Courses = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
                   onClick={() => handleLessonClick(lesson)}
-                  className={`bg-card rounded-xl border border-border p-4 flex items-center gap-4 cursor-pointer transition-all hover:shadow-md ${
-                    !profile?.is_approved ? "opacity-75" : ""
+                  className={`bg-card rounded-xl border border-border p-4 flex items-center gap-4 transition-all ${
+                    profile?.is_approved ? "cursor-pointer hover:shadow-md" : "cursor-not-allowed opacity-75"
                   }`}
                 >
                   <div className="w-24 h-16 bg-muted rounded-lg flex-shrink-0 overflow-hidden relative">
@@ -324,8 +338,8 @@ const Courses = () => {
                       </div>
                     )}
                     {!profile?.is_approved && (
-                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                        <Lock className="w-5 h-5 text-white" />
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                        <Lock className="w-6 h-6 text-white" />
                       </div>
                     )}
                   </div>
@@ -337,7 +351,10 @@ const Courses = () => {
                     </div>
                   </div>
                   {!profile?.is_approved ? (
-                    <Lock className="w-5 h-5 text-muted-foreground" />
+                    <div className="flex items-center gap-2 text-destructive">
+                      <Lock className="w-5 h-5" />
+                      <span className="text-xs font-medium">Xiran</span>
+                    </div>
                   ) : (
                     <ChevronRight className="w-5 h-5 text-muted-foreground" />
                   )}
@@ -384,14 +401,14 @@ const Courses = () => {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-accent/10 border border-accent/30 rounded-xl p-4 mb-6"
+            className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 mb-6"
           >
             <div className="flex items-start gap-3">
-              <MessageCircle className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
+              <Lock className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-semibold text-accent">Lacag bixin loo baahan yahay</h3>
+                <h3 className="font-semibold text-destructive">U baahan tahay lacag bixin si aad u daawato</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Si aad u daawato casharada, fadlan la xiriir WhatsApp: <strong>626966559</strong>
+                  Casharada waa xiran yihiin. La xiriir WhatsApp: <strong>626966559</strong>
                 </p>
                 <p className="text-sm text-muted-foreground">Qiimaha: <strong>$7/bilaha</strong></p>
               </div>
@@ -414,9 +431,7 @@ const Courses = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
                 onClick={() => handlePlaylistClick(playlist)}
-                className={`bg-card rounded-2xl border border-border overflow-hidden cursor-pointer transition-all hover:shadow-lg ${
-                  !profile?.is_approved ? "opacity-90" : ""
-                }`}
+                className="bg-card rounded-2xl border border-border overflow-hidden cursor-pointer transition-all hover:shadow-lg"
               >
                 <div className="aspect-video bg-muted relative">
                   {playlist.thumbnail_url ? (
@@ -426,17 +441,18 @@ const Courses = () => {
                       <BookOpen className="w-12 h-12 text-muted-foreground" />
                     </div>
                   )}
-                  {!profile?.is_approved && (
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                      <Lock className="w-10 h-10 text-white" />
-                    </div>
-                  )}
                 </div>
                 <div className="p-4">
                   <h3 className="font-semibold text-lg mb-1">{playlist.title}</h3>
                   <p className="text-sm text-muted-foreground line-clamp-2">
                     {playlist.description || "Casharo cusub"}
                   </p>
+                  {!profile?.is_approved && (
+                    <div className="flex items-center gap-1 mt-2 text-destructive text-sm">
+                      <Lock className="w-4 h-4" />
+                      <span>Casharada waa xiran</span>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             ))}

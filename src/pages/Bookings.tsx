@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Calendar, Loader2, Clock, Check, X, LogOut, MessageCircle } from "lucide-react";
+import { Calendar, Loader2, Clock, Check, X, LogOut, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -233,10 +233,10 @@ const Bookings = () => {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-accent/10 border border-accent/30 rounded-xl p-6 text-center"
+            className="bg-destructive/10 border border-destructive/30 rounded-xl p-6 text-center"
           >
-            <MessageCircle className="w-12 h-12 text-accent mx-auto mb-4" />
-            <h3 className="font-semibold text-lg mb-2">Lacag bixin loo baahan yahay</h3>
+            <Lock className="w-12 h-12 text-destructive mx-auto mb-4" />
+            <h3 className="font-semibold text-lg mb-2">U baahan tahay lacag bixin</h3>
             <p className="text-muted-foreground mb-4">
               Si aad balan u qaadato macalinka, fadlan la xiriir WhatsApp: <strong>626966559</strong>
             </p>
