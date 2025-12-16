@@ -12,10 +12,8 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { 
-  GraduationCap, 
   Mail, 
   Lock, 
   User, 
@@ -26,6 +24,8 @@ import {
   CheckCircle2
 } from "lucide-react";
 import { z } from "zod";
+import caaganelogo from "@/assets/caagane-academy-logo.jpg";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const registerSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters").max(100),
@@ -39,11 +39,11 @@ const registerSchema = z.object({
 });
 
 const languageLevels = [
-  { value: "beginner", label: "Beginner - Just starting out" },
-  { value: "elementary", label: "Elementary - Basic phrases" },
-  { value: "intermediate", label: "Intermediate - Can hold conversations" },
-  { value: "upper_intermediate", label: "Upper Intermediate - Good fluency" },
-  { value: "advanced", label: "Advanced - Near fluent" },
+  { value: "beginner", label: "Beginner - Bilow" },
+  { value: "elementary", label: "Elementary - Aasaasi" },
+  { value: "intermediate", label: "Intermediate - Dhexe" },
+  { value: "upper_intermediate", label: "Upper Intermediate - Dhexe Sare" },
+  { value: "advanced", label: "Advanced - Sare" },
 ];
 
 const Register = () => {
@@ -118,8 +118,8 @@ const Register = () => {
 
       setSuccess(true);
       toast({
-        title: "Registration Successful!",
-        description: "Your account is pending approval. You'll receive access once approved.",
+        title: "Waad ku guuleysatay!",
+        description: "Akoonkaaga waa la sameeyay. Fadlan sug ansixinta.",
       });
 
       setTimeout(() => {
@@ -153,13 +153,13 @@ const Register = () => {
           <div className="w-20 h-20 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 className="w-10 h-10 text-success" />
           </div>
-          <h1 className="text-3xl font-display font-bold mb-4">Registration Complete!</h1>
+          <h1 className="text-3xl font-display font-bold mb-4">Waad ku guuleysatay!</h1>
           <p className="text-muted-foreground mb-6">
-            Your account has been created successfully. Please wait for admin approval 
-            to access your courses. We'll notify you once approved.
+            Akoonkaaga waa la sameeyay. Fadlan sug ansixinta admin-ka 
+            si aad u hesho casharada. Waad ku soo dhawowdahay Caagane Academy!
           </p>
           <p className="text-sm text-muted-foreground">
-            Redirecting to sign in...
+            Dib ugu noqosho bogga login-ka...
           </p>
         </motion.div>
       </div>
@@ -168,6 +168,11 @@ const Register = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
+      {/* Theme Toggle */}
+      <div className="absolute top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
+      
       {/* Left side - Decoration */}
       <div className="hidden lg:flex flex-1 bg-gradient-hero items-center justify-center p-12 relative overflow-hidden">
         <div className="absolute inset-0 pattern-dots opacity-20" />
@@ -181,16 +186,16 @@ const Register = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             <h2 className="text-4xl font-display font-bold mb-4">
-              Start Your English Journey
+              Ku soo biir Caagane Academy
             </h2>
             <p className="text-primary-foreground/80 text-lg mb-8">
-              Join thousands of learners mastering English with our AI-powered 
-              platform and expert guidance.
+              Baro English-ka oo heerka ugu sareeya ah. Waxaad heli doontaa 
+              casharado, AI tutor, iyo macalin gaar ah.
             </p>
             
             <div className="bg-primary-foreground/10 backdrop-blur-lg rounded-2xl p-6 border border-primary-foreground/20">
-              <p className="text-3xl font-display font-bold mb-2">$7/month</p>
-              <p className="text-primary-foreground/70">Full access to all features</p>
+              <p className="text-3xl font-display font-bold mb-2">$7/bilaha</p>
+              <p className="text-primary-foreground/70">Hel dhammaan waxyaabaha</p>
             </div>
           </motion.div>
         </div>
@@ -206,25 +211,24 @@ const Register = () => {
         >
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 justify-center">
-            <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center">
-              <GraduationCap className="w-7 h-7 text-primary-foreground" />
-            </div>
+            <img src={caaganelogo} alt="Caagane Academy" className="w-12 h-12 rounded-xl object-cover" />
             <span className="text-2xl font-display font-bold">
-              Learn<span className="text-secondary">English</span>
+              <span className="text-primary">Caagane</span>
+              <span className="text-secondary"> Academy</span>
             </span>
           </Link>
 
           <div className="text-center">
-            <h1 className="text-3xl font-display font-bold">Create Account</h1>
+            <h1 className="text-3xl font-display font-bold">Samee Akoon</h1>
             <p className="text-muted-foreground mt-2">
-              Fill in your details to get started
+              Buuxi macluumaadkaaga si aad u bilaawato
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Full Name */}
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name (Three Names)</Label>
+              <Label htmlFor="fullName">Magaca Oo Buuxa (Saddex Magac)</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
@@ -240,7 +244,7 @@ const Register = () => {
 
             {/* Email */}
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="email">Email</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
@@ -291,7 +295,7 @@ const Register = () => {
             {/* Country & City */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="country">Country</Label>
+                <Label htmlFor="country">Wadanka</Label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
@@ -305,7 +309,7 @@ const Register = () => {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="city">City</Label>
+                <Label htmlFor="city">Magaalada</Label>
                 <Input
                   id="city"
                   placeholder="Mogadishu"
@@ -318,13 +322,13 @@ const Register = () => {
 
             {/* Language Level */}
             <div className="space-y-2">
-              <Label>Current English Level</Label>
+              <Label>Heerka English-ka ee hadda</Label>
               <Select
                 value={formData.languageLevel}
                 onValueChange={(value) => handleChange("languageLevel", value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select your level" />
+                  <SelectValue placeholder="Dooro heerkaaga" />
                 </SelectTrigger>
                 <SelectContent>
                   {languageLevels.map((level) => (
@@ -338,7 +342,7 @@ const Register = () => {
 
             {/* Learning Duration */}
             <div className="space-y-2">
-              <Label htmlFor="duration">How long have you been learning English? (months)</Label>
+              <Label htmlFor="duration">Intee bil ayaad baranaysay English? (bil)</Label>
               <div className="relative">
                 <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
@@ -363,18 +367,18 @@ const Register = () => {
               {loading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Creating Account...
+                  Waa la sameynayaa...
                 </>
               ) : (
-                "Create Account"
+                "Samee Akoon"
               )}
             </Button>
           </form>
 
           <p className="text-center text-muted-foreground">
-            Already have an account?{" "}
+            Akoon ma leedahay?{" "}
             <Link to="/auth" className="text-primary hover:underline font-medium">
-              Sign In
+              Soo Gal
             </Link>
           </p>
         </motion.div>

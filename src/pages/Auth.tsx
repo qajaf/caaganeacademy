@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { GraduationCap, Mail, Lock, Loader2 } from "lucide-react";
+import { Mail, Lock, Loader2 } from "lucide-react";
 import { z } from "zod";
+import caaganelogo from "@/assets/caagane-academy-logo.jpg";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -56,14 +58,19 @@ const Auth = () => {
     }
 
     toast({
-      title: "Welcome back!",
-      description: "You have successfully signed in.",
+      title: "Ku soo dhawow!",
+      description: "Waad ku soo dhawowdahay Caagane Academy",
     });
     navigate("/dashboard");
   };
 
   return (
     <div className="min-h-screen bg-background flex">
+      {/* Theme Toggle */}
+      <div className="absolute top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
+      
       {/* Left side - Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <motion.div
@@ -74,11 +81,10 @@ const Auth = () => {
         >
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 justify-center">
-            <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center">
-              <GraduationCap className="w-7 h-7 text-primary-foreground" />
-            </div>
+            <img src={caaganelogo} alt="Caagane Academy" className="w-12 h-12 rounded-xl object-cover" />
             <span className="text-2xl font-display font-bold">
-              Learn<span className="text-secondary">English</span>
+              <span className="text-primary">Caagane</span>
+              <span className="text-secondary"> Academy</span>
             </span>
           </Link>
 

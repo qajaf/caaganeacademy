@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Brain, Loader2, Send, LogOut, User, Bot, MessageCircle } from "lucide-react";
+import { Brain, Loader2, Send, LogOut, User, Bot, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ThemeToggle from "@/components/ThemeToggle";
 import caaganelogo from "@/assets/caagane-academy-logo.jpg";
@@ -229,9 +229,9 @@ const AITutor = () => {
             animate={{ opacity: 1, y: 0 }}
             className="flex-1 flex items-center justify-center"
           >
-            <div className="bg-accent/10 border border-accent/30 rounded-xl p-6 text-center max-w-md">
-              <MessageCircle className="w-12 h-12 text-accent mx-auto mb-4" />
-              <h3 className="font-semibold text-lg mb-2">Lacag bixin loo baahan yahay</h3>
+            <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-6 text-center max-w-md">
+              <Lock className="w-12 h-12 text-destructive mx-auto mb-4" />
+              <h3 className="font-semibold text-lg mb-2">U baahan tahay lacag bixin</h3>
               <p className="text-muted-foreground mb-4">
                 Si aad u isticmaasho AI Tutor-ka, fadlan la xiriir WhatsApp: <strong>626966559</strong>
               </p>
