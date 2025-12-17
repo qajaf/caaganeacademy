@@ -267,60 +267,116 @@ const Courses = () => {
           <div className="max-w-4xl mx-auto">
             {/* Video Player */}
             {selectedLesson.video_url && (
-              <div className="aspect-video bg-black rounded-2xl overflow-hidden mb-6">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="aspect-video bg-black rounded-2xl overflow-hidden mb-6 shadow-xl"
+              >
                 <iframe
                   src={getVideoEmbed(selectedLesson.video_url)}
                   className="w-full h-full"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                 />
-              </div>
+              </motion.div>
             )}
 
-            <h1 className="text-2xl font-display font-bold mb-2">{selectedLesson.title}</h1>
-            {selectedLesson.description && (
-              <p className="text-muted-foreground mb-6">{selectedLesson.description}</p>
-            )}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <h1 className="text-2xl font-display font-bold mb-2">{selectedLesson.title}</h1>
+              {selectedLesson.description && (
+                <p className="text-muted-foreground mb-6">{selectedLesson.description}</p>
+              )}
+            </motion.div>
 
             {/* Resources */}
             {resources.length > 0 && (
-              <div className="mb-6">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="mb-6"
+              >
                 <h3 className="font-semibold mb-3">PDF & Resources</h3>
                 <div className="space-y-2">
-                  {resources.map((resource) => (
-                    <a
+                  {resources.map((resource, index) => (
+                    <motion.button
                       key={resource.id}
-                      href={resource.file_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border hover:bg-muted transition-colors"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.3 + index * 0.1 }}
+                      onClick={async () => {
+                        try {
+                          const response = await fetch(resource.file_url);
+                          const blob = await response.blob();
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = resource.title + (resource.file_type === 'pdf' ? '.pdf' : '');
+                          document.body.appendChild(a);
+                          a.click();
+                          window.URL.revokeObjectURL(url);
+                          document.body.removeChild(a);
+                          toast({
+                            title: "Download bilaabmay",
+                            description: `${resource.title} waa la soo dagayaa`,
+                          });
+                        } catch (error) {
+                          console.error('Download error:', error);
+                          // Fallback: open in new tab
+                          window.open(resource.file_url, '_blank');
+                        }
+                      }}
+                      className="w-full flex items-center gap-3 p-4 bg-card rounded-xl border border-border hover:bg-muted hover:scale-[1.02] transition-all duration-200 group"
                     >
-                      <FileText className="w-5 h-5 text-primary" />
-                      <div className="flex-1">
+                      <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                        <FileText className="w-6 h-6 text-primary" />
+                      </div>
+                      <div className="flex-1 text-left">
                         <p className="font-medium">{resource.title}</p>
                         {resource.description && (
                           <p className="text-sm text-muted-foreground">{resource.description}</p>
                         )}
                       </div>
-                      <Download className="w-4 h-4" />
-                    </a>
+                      <motion.div
+                        whileHover={{ scale: 1.2 }}
+                        whileTap={{ scale: 0.9 }}
+                        className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                      >
+                        <Download className="w-5 h-5" />
+                      </motion.div>
+                    </motion.button>
                   ))}
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {/* Notes */}
             {notes.length > 0 && (
-              <div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
                 <h3 className="font-semibold mb-3">Qoraalada Casharka</h3>
-                <div className="bg-card rounded-xl border border-border p-4">
-                  {notes.map((note) => (
-                    <div key={note.id} className="prose prose-sm dark:prose-invert max-w-none">
+                <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
+                  {notes.map((note, index) => (
+                    <motion.div 
+                      key={note.id} 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.5 + index * 0.1 }}
+                      className="prose prose-sm dark:prose-invert max-w-none"
+                    >
                       <p className="whitespace-pre-wrap">{note.content}</p>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
-              </div>
+              </motion.div>
             )}
           </div>
         </div>
