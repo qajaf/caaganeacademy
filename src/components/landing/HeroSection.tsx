@@ -132,7 +132,7 @@ const HeroSection = () => {
                   </div>
                   <div>
                     <p className="font-semibold text-sm">Live Support</p>
-                    <p className="text-xs text-muted-foreground">WhatsApp: 626966559</p>
+                    <p className="text-xs text-muted-foreground">WhatsApp: +252711983546</p>
                   </div>
                 </div>
               </motion.div>

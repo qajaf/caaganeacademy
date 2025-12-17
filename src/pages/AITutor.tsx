@@ -233,7 +233,7 @@ const AITutor = () => {
               <Lock className="w-12 h-12 text-destructive mx-auto mb-4" />
               <h3 className="font-semibold text-lg mb-2">U baahan tahay lacag bixin</h3>
               <p className="text-muted-foreground mb-4">
-                Si aad u isticmaasho AI Tutor-ka, fadlan la xiriir WhatsApp: <strong>626966559</strong>
+                Si aad u isticmaasho AI Tutor-ka, fadlan la xiriir WhatsApp: <strong>+252711983546</strong>
               </p>
               <p className="text-sm text-muted-foreground">Qiimaha: <strong>$7/bilaha</strong></p>
             </div>

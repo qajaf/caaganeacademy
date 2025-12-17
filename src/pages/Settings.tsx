@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,14 +6,8 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Loader2, LogOut, User, MapPin, Save } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Loader2, LogOut, User, Phone, Save, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ThemeToggle from "@/components/ThemeToggle";
 import caaganelogo from "@/assets/caagane-academy-logo.jpg";
@@ -21,39 +15,22 @@ import caaganelogo from "@/assets/caagane-academy-logo.jpg";
 interface Profile {
   full_name: string;
   email: string;
-  language_level: string;
-  learning_duration_months: number;
-  country: string;
-  city: string;
+  whatsapp_number: string | null;
+  avatar_url: string | null;
 }
-
-const languageLevels = [
-  { value: "beginner", label: "Beginner - Bilow" },
-  { value: "elementary", label: "Elementary - Aasaasi" },
-  { value: "intermediate", label: "Intermediate - Dhexe" },
-  { value: "upper_intermediate", label: "Upper Intermediate - Dhexe Sare" },
-  { value: "advanced", label: "Advanced - Sare" },
-];
 
 const Settings = () => {
   const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [formData, setFormData] = useState<{
-    full_name: string;
-    language_level: string;
-    learning_duration_months: number;
-    country: string;
-    city: string;
-  }>({
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [formData, setFormData] = useState({
     full_name: "",
-    language_level: "beginner",
-    learning_duration_months: 0,
-    country: "",
-    city: "",
+    whatsapp_number: "",
   });
 
   useEffect(() => {
@@ -70,7 +47,7 @@ const Settings = () => {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("*")
+        .select("full_name, email, whatsapp_number, avatar_url")
         .eq("user_id", user!.id)
         .maybeSingle();
 
@@ -80,16 +57,90 @@ const Settings = () => {
         setProfile(data);
         setFormData({
           full_name: data.full_name || "",
-          language_level: data.language_level || "beginner",
-          learning_duration_months: data.learning_duration_months || 0,
-          country: data.country || "",
-          city: data.city || "",
+          whatsapp_number: data.whatsapp_number || "",
         });
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Khalad",
+        description: "Fadlan dooro sawir",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "Khalad",
+        description: "Sawirka waa inuu ka yar yahay 2MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingAvatar(true);
+
+    try {
+      // Create a unique filename
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user!.id}-${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(filePath);
+
+      const avatarUrl = urlData.publicUrl;
+
+      // Update profile with new avatar URL
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: avatarUrl })
+        .eq("user_id", user!.id);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setProfile((prev) => prev ? { ...prev, avatar_url: avatarUrl } : null);
+
+      toast({
+        title: "Waad ku guuleysatay!",
+        description: "Sawirkaaga waa la badalay",
+      });
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      toast({
+        title: "Khalad",
+        description: "Ma kaydin karin sawirka",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 
@@ -100,10 +151,7 @@ const Settings = () => {
         .from("profiles")
         .update({
           full_name: formData.full_name,
-          language_level: formData.language_level as "beginner" | "elementary" | "intermediate" | "upper_intermediate" | "advanced",
-          learning_duration_months: formData.learning_duration_months,
-          country: formData.country,
-          city: formData.city,
+          whatsapp_number: formData.whatsapp_number,
         })
         .eq("user_id", user!.id);
 
@@ -128,6 +176,15 @@ const Settings = () => {
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   if (authLoading || loading) {
@@ -166,6 +223,37 @@ const Settings = () => {
           <p className="text-muted-foreground mb-8">Wax ka badal macluumaadkaaga</p>
 
           <div className="bg-card rounded-2xl border border-border p-6 space-y-6">
+            {/* Avatar Section */}
+            <div className="flex flex-col items-center">
+              <div className="relative">
+                <Avatar className="w-24 h-24 cursor-pointer" onClick={handleAvatarClick}>
+                  <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name} />
+                  <AvatarFallback className="text-2xl bg-primary/10 text-primary">
+                    {profile?.full_name ? getInitials(profile.full_name) : <User className="w-10 h-10" />}
+                  </AvatarFallback>
+                </Avatar>
+                <button
+                  onClick={handleAvatarClick}
+                  disabled={uploadingAvatar}
+                  className="absolute bottom-0 right-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
+                >
+                  {uploadingAvatar ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Camera className="w-4 h-4" />
+                  )}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                />
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">Riix si aad u badasho sawirkaaga</p>
+            </div>
+
             {/* Email (Read Only) */}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -193,63 +281,17 @@ const Settings = () => {
               </div>
             </div>
 
-            {/* Language Level */}
+            {/* WhatsApp Number */}
             <div className="space-y-2">
-              <Label>Heerka Luuqada</Label>
-              <Select
-                value={formData.language_level}
-                onValueChange={(value: string) => setFormData({ ...formData, language_level: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Dooro heerkaaga" />
-                </SelectTrigger>
-                <SelectContent>
-                  {languageLevels.map((level) => (
-                    <SelectItem key={level.value} value={level.value}>
-                      {level.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Learning Duration */}
-            <div className="space-y-2">
-              <Label htmlFor="duration">Intee bil ayaad baranaysay English? (bil)</Label>
-              <Input
-                id="duration"
-                type="number"
-                min="0"
-                value={formData.learning_duration_months}
-                onChange={(e) =>
-                  setFormData({ ...formData, learning_duration_months: parseInt(e.target.value) || 0 })
-                }
-                placeholder="6"
-              />
-            </div>
-
-            {/* Country & City */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="country">Wadanka</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    id="country"
-                    value={formData.country}
-                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                    placeholder="Somalia"
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="city">Magaalada</Label>
+              <Label htmlFor="whatsapp">WhatsApp Number</Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
-                  id="city"
-                  value={formData.city}
-                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  placeholder="Mogadishu"
+                  id="whatsapp"
+                  value={formData.whatsapp_number}
+                  onChange={(e) => setFormData({ ...formData, whatsapp_number: e.target.value })}
+                  placeholder="+252 711983546"
+                  className="pl-10"
                 />
               </div>
             </div>
@@ -267,6 +309,13 @@ const Settings = () => {
                 </>
               )}
             </Button>
+          </div>
+
+          {/* WhatsApp Contact */}
+          <div className="mt-6 p-4 bg-secondary/10 rounded-xl">
+            <p className="text-sm text-muted-foreground text-center">
+              Wax su'aalo ah? La xiriir WhatsApp: <strong>+252711983546</strong>
+            </p>
           </div>
         </motion.div>
       </div>

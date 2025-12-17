@@ -200,7 +200,7 @@ const Courses = () => {
     if (!selectedCourse || !hasCourseAccess(selectedCourse.id)) {
       toast({
         title: "U baahan tahay lacag bixin",
-        description: "Si aad u daawato casharada, la xiriir WhatsApp: 626966559. Qiimaha: $7/bilaha",
+        description: "Si aad u daawato casharada, la xiriir WhatsApp: +252711983546",
         variant: "destructive",
       });
       return;
@@ -213,7 +213,7 @@ const Courses = () => {
     if (!selectedCourse || !hasCourseAccess(selectedCourse.id)) {
       toast({
         title: "U baahan tahay lacag bixin",
-        description: "Si aad u daawato casharada, la xiriir WhatsApp: 626966559. Qiimaha: $7/bilaha",
+        description: "Si aad u daawato casharada, la xiriir WhatsApp: +252711983546",
         variant: "destructive",
       });
       return;
@@ -362,7 +362,7 @@ const Courses = () => {
                 <div>
                   <h3 className="font-semibold text-destructive">Casharada waa xiran yihiin</h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Si aad u daawato casharada, la xiriir WhatsApp: <strong>626966559</strong>
+                    Si aad u daawato casharada, la xiriir WhatsApp: <strong>+252711983546</strong>
                   </p>
                   <p className="text-sm text-muted-foreground">Qiimaha: <strong>$7/bilaha</strong></p>
                 </div>
@@ -464,7 +464,7 @@ const Courses = () => {
                 <div>
                   <h3 className="font-semibold text-destructive">U baahan tahay lacag bixin si aad u daawato</h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Course-kan waa xiran yahay. La xiriir WhatsApp: <strong>626966559</strong>
+                    Course-kan waa xiran yahay. La xiriir WhatsApp: <strong>+252711983546</strong>
                   </p>
                   <p className="text-sm text-muted-foreground">Qiimaha: <strong>$7/bilaha</strong></p>
                 </div>
@@ -517,7 +517,7 @@ const Courses = () => {
                     {!currentCourseHasAccess && (
                       <div className="flex items-center gap-1 mt-2 text-destructive text-sm">
                         <Lock className="w-4 h-4" />
-                        <span>Xiran - La xiriir 626966559</span>
+                        <span>Xiran - La xiriir +252711983546</span>
                       </div>
                     )}
                   </div>
@@ -598,7 +598,7 @@ const Courses = () => {
                   {!hasCourseAccess(course.id) && (
                     <div className="flex items-center gap-1 mt-2 text-destructive text-sm">
                       <Lock className="w-4 h-4" />
-                      <span>Xiran - La xiriir 626966559</span>
+                      <span>Xiran - La xiriir +252711983546</span>
                     </div>
                   )}
                 </div>
