@@ -85,6 +85,7 @@ export type Database = {
           description: string | null
           features: string[] | null
           id: string
+          instructor_name: string | null
           is_published: boolean | null
           order_index: number | null
           price: number | null
@@ -97,6 +98,7 @@ export type Database = {
           description?: string | null
           features?: string[] | null
           id?: string
+          instructor_name?: string | null
           is_published?: boolean | null
           order_index?: number | null
           price?: number | null
@@ -109,6 +111,7 @@ export type Database = {
           description?: string | null
           features?: string[] | null
           id?: string
+          instructor_name?: string | null
           is_published?: boolean | null
           order_index?: number | null
           price?: number | null
@@ -413,6 +416,8 @@ export type Database = {
           last_watched_at: string | null
           lesson_id: string
           user_id: string
+          video_duration_seconds: number | null
+          video_stop_second: number | null
           watched_seconds: number | null
         }
         Insert: {
@@ -423,6 +428,8 @@ export type Database = {
           last_watched_at?: string | null
           lesson_id: string
           user_id: string
+          video_duration_seconds?: number | null
+          video_stop_second?: number | null
           watched_seconds?: number | null
         }
         Update: {
@@ -433,6 +440,8 @@ export type Database = {
           last_watched_at?: string | null
           lesson_id?: string
           user_id?: string
+          video_duration_seconds?: number | null
+          video_stop_second?: number | null
           watched_seconds?: number | null
         }
         Relationships: [

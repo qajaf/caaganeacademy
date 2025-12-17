@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,8 @@ import {
   Loader2,
   BookOpen,
   ChevronRight,
+  Upload,
+  User,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AdminCoursePlaylists from "./AdminCoursePlaylists";
@@ -36,6 +38,7 @@ interface Course {
   created_at: string;
   price: number;
   features: string[];
+  instructor_name: string | null;
   playlists_count?: number;
 }
 
@@ -53,7 +56,10 @@ const AdminCourses = () => {
     is_published: false,
     price: 0,
     features: "",
+    instructor_name: "Caagane",
   });
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -113,6 +119,7 @@ const AdminCourses = () => {
             is_published: formData.is_published,
             price: formData.price,
             features: featuresArray,
+            instructor_name: formData.instructor_name || 'Caagane',
           })
           .eq("id", editingCourse.id);
 
@@ -126,6 +133,7 @@ const AdminCourses = () => {
           is_published: formData.is_published,
           price: formData.price,
           features: featuresArray,
+          instructor_name: formData.instructor_name || 'Caagane',
           order_index: courses.length,
         });
 
@@ -135,7 +143,7 @@ const AdminCourses = () => {
 
       setDialogOpen(false);
       setEditingCourse(null);
-      setFormData({ title: "", description: "", thumbnail_url: "", is_published: false, price: 0, features: "" });
+      setFormData({ title: "", description: "", thumbnail_url: "", is_published: false, price: 0, features: "", instructor_name: "Caagane" });
       fetchCourses();
     } catch (error) {
       console.error("Error saving course:", error);
@@ -176,6 +184,7 @@ const AdminCourses = () => {
       is_published: course.is_published,
       price: course.price || 0,
       features: (course.features || []).join("\n"),
+      instructor_name: course.instructor_name || "Caagane",
     });
     setDialogOpen(true);
   };
@@ -208,7 +217,7 @@ const AdminCourses = () => {
           setDialogOpen(open);
           if (!open) {
             setEditingCourse(null);
-            setFormData({ title: "", description: "", thumbnail_url: "", is_published: false, price: 0, features: "" });
+            setFormData({ title: "", description: "", thumbnail_url: "", is_published: false, price: 0, features: "", instructor_name: "Caagane" });
           }
         }}>
           <DialogTrigger asChild>
@@ -246,13 +255,62 @@ const AdminCourses = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="thumbnail">Sawirka (URL)</Label>
-                <Input
-                  id="thumbnail"
-                  value={formData.thumbnail_url}
-                  onChange={(e) => setFormData({ ...formData, thumbnail_url: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
-                />
+                <Label htmlFor="instructor">Macalinka (by)</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="instructor"
+                    value={formData.instructor_name}
+                    onChange={(e) => setFormData({ ...formData, instructor_name: e.target.value })}
+                    placeholder="Caagane"
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Sawirka (Thumbnail)</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={formData.thumbnail_url}
+                    onChange={(e) => setFormData({ ...formData, thumbnail_url: e.target.value })}
+                    placeholder="URL ama upload"
+                    className="flex-1"
+                  />
+                  <input
+                    type="file"
+                    ref={thumbnailInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setUploadingThumbnail(true);
+                      try {
+                        const fileName = `course-${Date.now()}.${file.name.split('.').pop()}`;
+                        const { error: uploadError } = await supabase.storage
+                          .from('thumbnails')
+                          .upload(fileName, file);
+                        if (uploadError) throw uploadError;
+                        const { data: urlData } = supabase.storage.from('thumbnails').getPublicUrl(fileName);
+                        setFormData({ ...formData, thumbnail_url: urlData.publicUrl });
+                        toast({ title: "Success", description: "Thumbnail uploaded" });
+                      } catch (error) {
+                        console.error(error);
+                        toast({ title: "Error", description: "Failed to upload thumbnail", variant: "destructive" });
+                      } finally {
+                        setUploadingThumbnail(false);
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => thumbnailInputRef.current?.click()}
+                    disabled={uploadingThumbnail}
+                  >
+                    {uploadingThumbnail ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                  </Button>
+                </div>
               </div>
               <div>
                 <Label htmlFor="price">Qiimaha ($ bishii)</Label>
