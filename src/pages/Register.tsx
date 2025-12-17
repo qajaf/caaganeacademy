@@ -19,7 +19,6 @@ import {
   User, 
   Phone, 
   MapPin, 
-  Clock, 
   Loader2,
   CheckCircle2
 } from "lucide-react";
@@ -32,18 +31,37 @@ const registerSchema = z.object({
   email: z.string().email("Please enter a valid email address").max(255),
   password: z.string().min(6, "Password must be at least 6 characters").max(100),
   whatsappNumber: z.string().min(6, "Please enter a valid WhatsApp number").max(20),
-  country: z.string().min(2, "Please enter your country").max(100),
+  country: z.string().min(2, "Please select your country").max(100),
   city: z.string().min(2, "Please enter your city").max(100),
-  languageLevel: z.enum(["beginner", "elementary", "intermediate", "upper_intermediate", "advanced"]),
-  learningDuration: z.number().min(0).max(600),
 });
 
-const languageLevels = [
-  { value: "beginner", label: "Beginner - Bilow" },
-  { value: "elementary", label: "Elementary - Aasaasi" },
-  { value: "intermediate", label: "Intermediate - Dhexe" },
-  { value: "upper_intermediate", label: "Upper Intermediate - Dhexe Sare" },
-  { value: "advanced", label: "Advanced - Sare" },
+const countries = [
+  "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Argentina", "Armenia", "Australia",
+  "Austria", "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium",
+  "Belize", "Benin", "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei",
+  "Bulgaria", "Burkina Faso", "Burundi", "Cambodia", "Cameroon", "Canada", "Cape Verde",
+  "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo", "Costa Rica",
+  "Croatia", "Cuba", "Cyprus", "Czech Republic", "Denmark", "Djibouti", "Dominican Republic",
+  "DR Congo", "East Timor", "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea",
+  "Estonia", "Eswatini", "Ethiopia", "Fiji", "Finland", "France", "Gabon", "Gambia", "Georgia",
+  "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana",
+  "Haiti", "Honduras", "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland",
+  "Israel", "Italy", "Ivory Coast", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kiribati",
+  "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein",
+  "Lithuania", "Luxembourg", "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta",
+  "Marshall Islands", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco",
+  "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar", "Namibia", "Nauru", "Nepal",
+  "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Korea", "North Macedonia",
+  "Norway", "Oman", "Pakistan", "Palau", "Palestine", "Panama", "Papua New Guinea", "Paraguay",
+  "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Romania", "Russia", "Rwanda",
+  "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa",
+  "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles",
+  "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Africa",
+  "South Korea", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland",
+  "Syria", "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Togo", "Tonga", "Trinidad and Tobago",
+  "Tunisia", "Turkey", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", "United Arab Emirates",
+  "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City",
+  "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"
 ];
 
 const Register = () => {
@@ -54,8 +72,6 @@ const Register = () => {
     whatsappNumber: "",
     country: "",
     city: "",
-    languageLevel: "beginner" as const,
-    learningDuration: 0,
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -106,8 +122,6 @@ const Register = () => {
             whatsapp_number: formData.whatsappNumber,
             country: formData.country,
             city: formData.city,
-            language_level: formData.languageLevel,
-            learning_duration_months: formData.learningDuration,
           })
           .eq("user_id", data.user.id);
 
@@ -283,7 +297,7 @@ const Register = () => {
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   id="whatsapp"
-                  placeholder="+252 626966559"
+                  placeholder="+252 711983546"
                   value={formData.whatsappNumber}
                   onChange={(e) => handleChange("whatsappNumber", e.target.value)}
                   className="pl-10"
@@ -296,17 +310,22 @@ const Register = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="country">Wadanka</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    id="country"
-                    placeholder="Somalia"
-                    value={formData.country}
-                    onChange={(e) => handleChange("country", e.target.value)}
-                    className="pl-10"
-                    required
-                  />
-                </div>
+                <Select
+                  value={formData.country}
+                  onValueChange={(value) => handleChange("country", value)}
+                >
+                  <SelectTrigger>
+                    <MapPin className="w-4 h-4 mr-2 text-muted-foreground" />
+                    <SelectValue placeholder="Dooro wadanka" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    {countries.map((country) => (
+                      <SelectItem key={country} value={country}>
+                        {country}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="city">Magaalada</Label>
@@ -316,43 +335,6 @@ const Register = () => {
                   value={formData.city}
                   onChange={(e) => handleChange("city", e.target.value)}
                   required
-                />
-              </div>
-            </div>
-
-            {/* Language Level */}
-            <div className="space-y-2">
-              <Label>Heerka English-ka ee hadda</Label>
-              <Select
-                value={formData.languageLevel}
-                onValueChange={(value) => handleChange("languageLevel", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Dooro heerkaaga" />
-                </SelectTrigger>
-                <SelectContent>
-                  {languageLevels.map((level) => (
-                    <SelectItem key={level.value} value={level.value}>
-                      {level.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Learning Duration */}
-            <div className="space-y-2">
-              <Label htmlFor="duration">Intee bil ayaad baranaysay English? (bil)</Label>
-              <div className="relative">
-                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  id="duration"
-                  type="number"
-                  min="0"
-                  placeholder="6"
-                  value={formData.learningDuration || ""}
-                  onChange={(e) => handleChange("learningDuration", parseInt(e.target.value) || 0)}
-                  className="pl-10"
                 />
               </div>
             </div>

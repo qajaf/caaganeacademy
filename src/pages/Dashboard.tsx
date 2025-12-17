@@ -8,7 +8,7 @@ import {
   GraduationCap, 
   BookOpen, 
   Brain, 
-  Calendar, 
+  Settings, 
   FileText, 
   LogOut,
   Clock,
@@ -154,7 +154,7 @@ const Dashboard = () => {
                     <li>• Our admin will review your registration</li>
                     <li>• You'll receive access once approved</li>
                     <li>• Subscription fee: $7/month</li>
-                    <li>• Contact: somalitechtips94@gmail.com</li>
+                    <li>• Contact WhatsApp: +252711983546</li>
                   </ul>
                 </div>
               </div>
@@ -214,8 +214,8 @@ const Dashboard = () => {
           {[
             { icon: BookOpen, title: "My Courses", desc: "Continue learning", color: "bg-primary/10 text-primary", href: "/courses" },
             { icon: Brain, title: "AI Tutor", desc: "Practice with AI", color: "bg-secondary/10 text-secondary", href: "/ai-tutor" },
-            { icon: Calendar, title: "Book Session", desc: "Schedule with teacher", color: "bg-accent/10 text-accent", href: "/bookings" },
             { icon: FileText, title: "My Notes", desc: "View saved notes", color: "bg-success/10 text-success", href: "/notes" },
+            { icon: Settings, title: "Settings", desc: "Profile settings", color: "bg-accent/10 text-accent", href: "/settings" },
           ].map((item, index) => (
             <motion.div
               key={item.title}
