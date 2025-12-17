@@ -27,7 +27,8 @@ const HeroSection = () => {
             </div>
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold leading-tight">
-              <span className="gradient-text">CAAGANE ACADEMY</span>
+              Baro <span className="gradient-text">Xirfadaha</span> Cusub
+              <span className="text-secondary"> Online</span>
             </h1>
             
             <p className="text-lg text-muted-foreground max-w-xl">
