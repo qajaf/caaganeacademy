@@ -1,53 +1,53 @@
 import { motion } from "framer-motion";
 import { 
-  Video, 
+  BookOpen, 
   Brain, 
-  Calendar, 
-  FileText, 
-  MessageSquare, 
-  TrendingUp 
+  Calculator, 
+  Monitor, 
+  Palette, 
+  Calendar 
 } from "lucide-react";
 
-const features = [
+const courses = [
   {
-    icon: Video,
-    title: "HD Video Lessons",
-    description: "Access high-quality video lessons organized by level. From beginner to advanced, learn at your own pace.",
+    icon: BookOpen,
+    title: "English Language",
+    description: "Baro luuqada Englishka laga bilaabo bilowga ilaa heerka sare. Grammar, vocabulary, iyo hadal.",
     color: "text-primary",
     bgColor: "bg-primary/10",
   },
   {
-    icon: Brain,
-    title: "AI-Powered Tutor",
-    description: "Get instant help from our intelligent AI chatbot. Practice vocabulary, fix grammar, and get Arabic translations.",
+    icon: Calculator,
+    title: "Xisaabta (Mathematics)",
+    description: "Baro xisaabta aasaasiga ah, algebra, iyo xisaabaadka ganacsiga. Si sahlan oo waxtarsan.",
     color: "text-secondary",
     bgColor: "bg-secondary/10",
   },
   {
-    icon: Calendar,
-    title: "Book Live Sessions",
-    description: "Schedule one-on-one sessions with our expert teacher. Get personalized feedback and practice speaking.",
+    icon: Monitor,
+    title: "Basic Computer Skills",
+    description: "Baro sida loo isticmaalo computer-ka, Microsoft Office, internet-ka iyo email-ka.",
     color: "text-accent",
     bgColor: "bg-accent/10",
   },
   {
-    icon: FileText,
-    title: "Downloadable Resources",
-    description: "Access PDF materials, vocabulary lists, and practice exercises. Download and study offline anytime.",
+    icon: Palette,
+    title: "Graphic Design",
+    description: "Baro naqshadeynta sawirrada, logo-yada, iyo design-ka casriga ah. Photoshop, Canva iwm.",
     color: "text-success",
     bgColor: "bg-success/10",
   },
   {
-    icon: MessageSquare,
-    title: "Personal Notes",
-    description: "Keep track of new words and important concepts. Your notes are always saved and accessible.",
+    icon: Brain,
+    title: "AI Tutor",
+    description: "Hel caawin AI ah oo 24/7 ah. Su'aalo, sharaxo, iyo tababar luuqadeed.",
     color: "text-primary",
     bgColor: "bg-primary/10",
   },
   {
-    icon: TrendingUp,
-    title: "Progress Tracking",
-    description: "Monitor your learning journey. See which lessons you've completed and how much time you've invested.",
+    icon: Calendar,
+    title: "Ballamo Macalin",
+    description: "Qabso ballamo gaara macalinka. Hel jawaab gaar ah iyo talo.",
     color: "text-secondary",
     bgColor: "bg-secondary/10",
   },
@@ -68,18 +68,18 @@ const FeaturesSection = () => {
           className="text-center max-w-3xl mx-auto mb-16"
         >
           <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
-            Everything You Need to <span className="gradient-text">Master English</span>
+            Courses-ka <span className="gradient-text">Caagane Academy</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Our comprehensive platform provides all the tools and resources you need 
-            to achieve fluency in English.
+            Waxaan bixinaa courses kala duwan oo loogu talagalay in lagugu xirfadaysiyo 
+            xirfadaha casriga ah ee suuqa shaqada loo baahan yahay.
           </p>
         </motion.div>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
+          {courses.map((course, index) => (
             <motion.div
-              key={feature.title}
+              key={course.title}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -87,16 +87,16 @@ const FeaturesSection = () => {
               className="group"
             >
               <div className="h-full bg-card rounded-2xl p-8 border border-border hover:border-primary/30 transition-all duration-300 card-hover">
-                <div className={`w-14 h-14 ${feature.bgColor} rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                  <feature.icon className={`w-7 h-7 ${feature.color}`} />
+                <div className={`w-14 h-14 ${course.bgColor} rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                  <course.icon className={`w-7 h-7 ${course.color}`} />
                 </div>
                 
                 <h3 className="text-xl font-display font-semibold mb-3">
-                  {feature.title}
+                  {course.title}
                 </h3>
                 
                 <p className="text-muted-foreground leading-relaxed">
-                  {feature.description}
+                  {course.description}
                 </p>
               </div>
             </motion.div>

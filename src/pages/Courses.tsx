@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
+  GraduationCap,
   BookOpen,
   Loader2,
   Lock,
@@ -14,7 +15,6 @@ import {
   Clock,
   FileText,
   Download,
-  MessageCircle,
   LogOut,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -24,6 +24,19 @@ import caaganelogo from "@/assets/caagane-academy-logo.jpg";
 interface Profile {
   is_approved: boolean;
   full_name: string;
+}
+
+interface Course {
+  id: string;
+  title: string;
+  description: string | null;
+  thumbnail_url: string | null;
+  is_published: boolean;
+}
+
+interface CourseAccess {
+  course_id: string;
+  is_approved: boolean;
 }
 
 interface Playlist {
@@ -63,6 +76,9 @@ const Courses = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [courseAccess, setCourseAccess] = useState<CourseAccess[]>([]);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -70,6 +86,7 @@ const Courses = () => {
   const [resources, setResources] = useState<LessonResource[]>([]);
   const [notes, setNotes] = useState<LessonNote[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingPlaylists, setLoadingPlaylists] = useState(false);
   const [loadingLessons, setLoadingLessons] = useState(false);
 
   useEffect(() => {
@@ -93,19 +110,51 @@ const Courses = () => {
 
       setProfile(profileData);
 
-      // Fetch published playlists (everyone can see published ones)
-      const { data: playlistData, error } = await supabase
-        .from("playlists")
+      // Fetch published courses
+      const { data: coursesData, error } = await supabase
+        .from("courses")
         .select("*")
         .eq("is_published", true)
         .order("order_index", { ascending: true });
 
       if (error) throw error;
-      setPlaylists(playlistData || []);
+      setCourses(coursesData || []);
+
+      // Fetch course access
+      const { data: accessData } = await supabase
+        .from("student_course_access")
+        .select("course_id, is_approved")
+        .eq("user_id", user!.id);
+
+      setCourseAccess(accessData || []);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const hasCourseAccess = (courseId: string) => {
+    const access = courseAccess.find(a => a.course_id === courseId);
+    return access?.is_approved === true;
+  };
+
+  const fetchPlaylists = async (courseId: string) => {
+    setLoadingPlaylists(true);
+    try {
+      const { data, error } = await supabase
+        .from("playlists")
+        .select("*")
+        .eq("course_id", courseId)
+        .eq("is_published", true)
+        .order("order_index", { ascending: true });
+
+      if (error) throw error;
+      setPlaylists(data || []);
+    } catch (error) {
+      console.error("Error fetching playlists:", error);
+    } finally {
+      setLoadingPlaylists(false);
     }
   };
 
@@ -142,14 +191,26 @@ const Courses = () => {
     }
   };
 
+  const handleCourseClick = (course: Course) => {
+    setSelectedCourse(course);
+    fetchPlaylists(course.id);
+  };
+
   const handlePlaylistClick = (playlist: Playlist) => {
-    // Allow all students to view playlist contents
+    if (!selectedCourse || !hasCourseAccess(selectedCourse.id)) {
+      toast({
+        title: "U baahan tahay lacag bixin",
+        description: "Si aad u daawato casharada, la xiriir WhatsApp: 626966559. Qiimaha: $7/bilaha",
+        variant: "destructive",
+      });
+      return;
+    }
     setSelectedPlaylist(playlist);
     fetchLessons(playlist.id);
   };
 
   const handleLessonClick = (lesson: Lesson) => {
-    if (!profile?.is_approved) {
+    if (!selectedCourse || !hasCourseAccess(selectedCourse.id)) {
       toast({
         title: "U baahan tahay lacag bixin",
         description: "Si aad u daawato casharada, la xiriir WhatsApp: 626966559. Qiimaha: $7/bilaha",
@@ -184,8 +245,10 @@ const Courses = () => {
     );
   }
 
+  const currentCourseHasAccess = selectedCourse ? hasCourseAccess(selectedCourse.id) : false;
+
   // Lesson View
-  if (selectedLesson && profile?.is_approved) {
+  if (selectedLesson && currentCourseHasAccess) {
     return (
       <div className="min-h-screen bg-background">
         <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
@@ -266,7 +329,7 @@ const Courses = () => {
   }
 
   // Lessons List View
-  if (selectedPlaylist) {
+  if (selectedPlaylist && selectedCourse) {
     return (
       <div className="min-h-screen bg-background">
         <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
@@ -274,7 +337,7 @@ const Courses = () => {
             <div className="flex items-center justify-between h-16">
               <Button variant="ghost" onClick={() => { setSelectedPlaylist(null); setLessons([]); }}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Casharada
+                {selectedCourse.title}
               </Button>
               <ThemeToggle />
             </div>
@@ -287,8 +350,8 @@ const Courses = () => {
             <p className="text-muted-foreground mb-6">{selectedPlaylist.description}</p>
           )}
 
-          {/* Payment Notice for Unapproved Users */}
-          {!profile?.is_approved && (
+          {/* Payment Notice for Users without Course Access */}
+          {!currentCourseHasAccess && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -326,7 +389,7 @@ const Courses = () => {
                   transition={{ delay: index * 0.05 }}
                   onClick={() => handleLessonClick(lesson)}
                   className={`bg-card rounded-xl border border-border p-4 flex items-center gap-4 transition-all ${
-                    profile?.is_approved ? "cursor-pointer hover:shadow-md" : "cursor-not-allowed opacity-75"
+                    currentCourseHasAccess ? "cursor-pointer hover:shadow-md" : "cursor-not-allowed opacity-75"
                   }`}
                 >
                   <div className="w-24 h-16 bg-muted rounded-lg flex-shrink-0 overflow-hidden relative">
@@ -337,7 +400,7 @@ const Courses = () => {
                         <Play className="w-6 h-6 text-muted-foreground" />
                       </div>
                     )}
-                    {!profile?.is_approved && (
+                    {!currentCourseHasAccess && (
                       <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                         <Lock className="w-6 h-6 text-white" />
                       </div>
@@ -350,7 +413,7 @@ const Courses = () => {
                       <span>{lesson.duration_minutes || 0} daqiiqo</span>
                     </div>
                   </div>
-                  {!profile?.is_approved ? (
+                  {!currentCourseHasAccess ? (
                     <div className="flex items-center gap-2 text-destructive">
                       <Lock className="w-5 h-5" />
                       <span className="text-xs font-medium">Xiran</span>
@@ -367,7 +430,107 @@ const Courses = () => {
     );
   }
 
-  // Playlists View (Main)
+  // Playlists View (within a course)
+  if (selectedCourse) {
+    return (
+      <div className="min-h-screen bg-background">
+        <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between h-16">
+              <Button variant="ghost" onClick={() => { setSelectedCourse(null); setPlaylists([]); }}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Courses
+              </Button>
+              <ThemeToggle />
+            </div>
+          </div>
+        </nav>
+
+        <div className="container mx-auto px-4 py-8">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <h1 className="text-3xl font-display font-bold mb-2">{selectedCourse.title}</h1>
+            <p className="text-muted-foreground mb-8">{selectedCourse.description}</p>
+          </motion.div>
+
+          {/* Payment Notice for Users without Course Access */}
+          {!currentCourseHasAccess && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 mb-6"
+            >
+              <div className="flex items-start gap-3">
+                <Lock className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-destructive">U baahan tahay lacag bixin si aad u daawato</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Course-kan waa xiran yahay. La xiriir WhatsApp: <strong>626966559</strong>
+                  </p>
+                  <p className="text-sm text-muted-foreground">Qiimaha: <strong>$7/bilaha</strong></p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {loadingPlaylists ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : playlists.length === 0 ? (
+            <div className="bg-card rounded-2xl border border-border p-12 text-center">
+              <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2">Ma jiraan playlists wali</h2>
+              <p className="text-muted-foreground">Playlists waa la soo gelin doonaa dhawaan</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {playlists.map((playlist, index) => (
+                <motion.div
+                  key={playlist.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  onClick={() => handlePlaylistClick(playlist)}
+                  className={`bg-card rounded-2xl border border-border overflow-hidden transition-all ${
+                    currentCourseHasAccess ? "cursor-pointer hover:shadow-lg" : "cursor-pointer"
+                  }`}
+                >
+                  <div className="aspect-video bg-muted relative">
+                    {playlist.thumbnail_url ? (
+                      <img src={playlist.thumbnail_url} alt={playlist.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <BookOpen className="w-12 h-12 text-muted-foreground" />
+                      </div>
+                    )}
+                    {!currentCourseHasAccess && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                        <Lock className="w-8 h-8 text-white" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-semibold text-lg mb-1">{playlist.title}</h3>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {playlist.description || "Casharo cusub"}
+                    </p>
+                    {!currentCourseHasAccess && (
+                      <div className="flex items-center gap-1 mt-2 text-destructive text-sm">
+                        <Lock className="w-4 h-4" />
+                        <span>Xiran - La xiriir 626966559</span>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Courses View (Main)
   return (
     <div className="min-h-screen bg-background">
       <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
@@ -392,65 +555,50 @@ const Courses = () => {
 
       <div className="container mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="text-3xl font-display font-bold mb-2">Casharada</h1>
-          <p className="text-muted-foreground mb-8">Ku soo dhawoow casharadayada English-ka</p>
+          <h1 className="text-3xl font-display font-bold mb-2">Courses</h1>
+          <p className="text-muted-foreground mb-8">Dooro course-ka aad rabto inaad barato</p>
         </motion.div>
 
-        {/* Payment Notice for Unapproved Users */}
-        {!profile?.is_approved && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 mb-6"
-          >
-            <div className="flex items-start gap-3">
-              <Lock className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
-              <div>
-                <h3 className="font-semibold text-destructive">U baahan tahay lacag bixin si aad u daawato</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Casharada waa xiran yihiin. La xiriir WhatsApp: <strong>626966559</strong>
-                </p>
-                <p className="text-sm text-muted-foreground">Qiimaha: <strong>$7/bilaha</strong></p>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {playlists.length === 0 ? (
+        {courses.length === 0 ? (
           <div className="bg-card rounded-2xl border border-border p-12 text-center">
-            <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Ma jiraan casharo wali</h2>
-            <p className="text-muted-foreground">Casharada waa la soo gelin doonaa dhawaan</p>
+            <GraduationCap className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Ma jiraan courses wali</h2>
+            <p className="text-muted-foreground">Courses waa la soo gelin doonaa dhawaan</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {playlists.map((playlist, index) => (
+            {courses.map((course, index) => (
               <motion.div
-                key={playlist.id}
+                key={course.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                onClick={() => handlePlaylistClick(playlist)}
+                onClick={() => handleCourseClick(course)}
                 className="bg-card rounded-2xl border border-border overflow-hidden cursor-pointer transition-all hover:shadow-lg"
               >
                 <div className="aspect-video bg-muted relative">
-                  {playlist.thumbnail_url ? (
-                    <img src={playlist.thumbnail_url} alt={playlist.title} className="w-full h-full object-cover" />
+                  {course.thumbnail_url ? (
+                    <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <BookOpen className="w-12 h-12 text-muted-foreground" />
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-secondary/20">
+                      <GraduationCap className="w-12 h-12 text-primary" />
+                    </div>
+                  )}
+                  {hasCourseAccess(course.id) && (
+                    <div className="absolute top-2 right-2 bg-success text-success-foreground px-2 py-1 rounded-full text-xs font-medium">
+                      Fasax leh
                     </div>
                   )}
                 </div>
                 <div className="p-4">
-                  <h3 className="font-semibold text-lg mb-1">{playlist.title}</h3>
+                  <h3 className="font-semibold text-lg mb-1">{course.title}</h3>
                   <p className="text-sm text-muted-foreground line-clamp-2">
-                    {playlist.description || "Casharo cusub"}
+                    {course.description || "Course cusub"}
                   </p>
-                  {!profile?.is_approved && (
+                  {!hasCourseAccess(course.id) && (
                     <div className="flex items-center gap-1 mt-2 text-destructive text-sm">
                       <Lock className="w-4 h-4" />
-                      <span>Casharada waa xiran</span>
+                      <span>Xiran - La xiriir 626966559</span>
                     </div>
                   )}
                 </div>

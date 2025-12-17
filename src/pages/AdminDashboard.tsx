@@ -6,7 +6,8 @@ import { Loader2 } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import AdminOverview from "@/components/admin/AdminOverview";
 import AdminStudents from "@/components/admin/AdminStudents";
-import AdminPlaylists from "@/components/admin/AdminPlaylists";
+import AdminCourses from "@/components/admin/AdminCourses";
+import AdminCourseAccess from "@/components/admin/AdminCourseAccess";
 import AdminBookings from "@/components/admin/AdminBookings";
 
 const AdminDashboard = () => {
@@ -60,10 +61,12 @@ const AdminDashboard = () => {
     switch (activeTab) {
       case "overview":
         return <AdminOverview />;
+      case "courses":
+        return <AdminCourses />;
       case "students":
         return <AdminStudents />;
-      case "playlists":
-        return <AdminPlaylists />;
+      case "access":
+        return <AdminCourseAccess />;
       case "bookings":
         return <AdminBookings />;
       case "settings":

@@ -25,8 +25,9 @@ interface AdminLayoutProps {
 
 const menuItems = [
   { id: "overview", label: "Dashboard", icon: LayoutDashboard },
+  { id: "courses", label: "Courses", icon: GraduationCap },
   { id: "students", label: "Ardayda", icon: Users },
-  { id: "playlists", label: "Casharada", icon: BookOpen },
+  { id: "access", label: "Course Access", icon: BookOpen },
   { id: "bookings", label: "Ballamaha", icon: Calendar },
   { id: "settings", label: "Settings", icon: Settings },
 ];

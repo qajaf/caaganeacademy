@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { GraduationCap, BookOpen, Users, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import heroImage from "@/assets/hero-learning.jpg";
+import caaganelogo from "@/assets/caagane-academy-logo.jpg";
 
 const HeroSection = () => {
   return (
@@ -23,29 +24,29 @@ const HeroSection = () => {
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-accent/10 rounded-full border border-accent/20">
               <Sparkles className="w-4 h-4 text-accent" />
-              <span className="text-sm font-medium text-accent">Start Your English Journey Today</span>
+              <span className="text-sm font-medium text-accent">Ku soo dhawoow Caagane Academy</span>
             </div>
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold leading-tight">
-              Master <span className="gradient-text">English</span> with 
-              <span className="text-secondary"> Expert</span> Guidance
+              Baro <span className="gradient-text">Xirfadaha</span> Cusub
+              <span className="text-secondary"> Online</span>
             </h1>
             
             <p className="text-lg text-muted-foreground max-w-xl">
-              Join thousands of learners worldwide. Our comprehensive courses, AI-powered tutoring, 
-              and personalized learning paths will help you achieve fluency faster than ever.
+              Baro English, Xisaab, Computer Skills, Graphic Design iyo wax badan. 
+              Macallin takhasus leh, cashar fiican, iyo AI tutor oo ku caawiya barashada.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">
               <Button variant="hero" size="xl" asChild>
                 <Link to="/register">
                   <GraduationCap className="w-5 h-5" />
-                  Start Learning - $7/month
+                  Bilow Hadda - $7/bilaha
                 </Link>
               </Button>
               <Button variant="outline" size="xl" asChild>
                 <Link to="/auth">
-                  Already a member? Sign In
+                  Haddii aad xubin tahay? Soo gal
                 </Link>
               </Button>
             </div>
@@ -58,8 +59,8 @@ const HeroSection = () => {
                 transition={{ delay: 0.3 }}
                 className="space-y-1"
               >
-                <p className="text-3xl font-display font-bold text-primary">500+</p>
-                <p className="text-sm text-muted-foreground">Video Lessons</p>
+                <p className="text-3xl font-display font-bold text-primary">4+</p>
+                <p className="text-sm text-muted-foreground">Courses</p>
               </motion.div>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -67,8 +68,8 @@ const HeroSection = () => {
                 transition={{ delay: 0.4 }}
                 className="space-y-1"
               >
-                <p className="text-3xl font-display font-bold text-secondary">1,200+</p>
-                <p className="text-sm text-muted-foreground">Active Students</p>
+                <p className="text-3xl font-display font-bold text-secondary">500+</p>
+                <p className="text-sm text-muted-foreground">Casharood</p>
               </motion.div>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -77,7 +78,7 @@ const HeroSection = () => {
                 className="space-y-1"
               >
                 <p className="text-3xl font-display font-bold text-accent">AI</p>
-                <p className="text-sm text-muted-foreground">Powered Tutor</p>
+                <p className="text-sm text-muted-foreground">Tutor</p>
               </motion.div>
             </div>
           </motion.div>
@@ -98,7 +99,7 @@ const HeroSection = () => {
               <div className="relative z-10 rounded-2xl overflow-hidden shadow-lg">
                 <img
                   src={heroImage}
-                  alt="Students learning English together"
+                  alt="Students learning at Caagane Academy"
                   className="w-full h-auto object-cover"
                 />
               </div>
@@ -114,8 +115,8 @@ const HeroSection = () => {
                     <BookOpen className="w-5 h-5 text-secondary" />
                   </div>
                   <div>
-                    <p className="font-semibold text-sm">Level Up!</p>
-                    <p className="text-xs text-muted-foreground">Intermediate</p>
+                    <p className="font-semibold text-sm">Courses</p>
+                    <p className="text-xs text-muted-foreground">English, Xisaab...</p>
                   </div>
                 </div>
               </motion.div>
@@ -131,7 +132,7 @@ const HeroSection = () => {
                   </div>
                   <div>
                     <p className="font-semibold text-sm">Live Support</p>
-                    <p className="text-xs text-muted-foreground">24/7 Available</p>
+                    <p className="text-xs text-muted-foreground">WhatsApp: 626966559</p>
                   </div>
                 </div>
               </motion.div>

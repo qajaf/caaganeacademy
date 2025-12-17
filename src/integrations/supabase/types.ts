@@ -79,6 +79,39 @@ export type Database = {
           },
         ]
       }
+      courses: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_published: boolean | null
+          order_index: number | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_published?: boolean | null
+          order_index?: number | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_published?: boolean | null
+          order_index?: number | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lesson_notes: {
         Row: {
           content: string
@@ -201,6 +234,7 @@ export type Database = {
       }
       playlists: {
         Row: {
+          course_id: string | null
           created_at: string
           description: string | null
           id: string
@@ -211,6 +245,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          course_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -221,6 +256,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          course_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -230,7 +266,15 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "playlists_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -291,6 +335,41 @@ export type Database = {
           whatsapp_number?: string | null
         }
         Relationships: []
+      }
+      student_course_access: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          is_approved: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          is_approved?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          is_approved?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_course_access_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       student_notes: {
         Row: {
@@ -386,6 +465,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_course_access: {
+        Args: { _course_id: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
