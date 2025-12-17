@@ -83,9 +83,11 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          features: string[] | null
           id: string
           is_published: boolean | null
           order_index: number | null
+          price: number | null
           thumbnail_url: string | null
           title: string
           updated_at: string
@@ -93,9 +95,11 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          features?: string[] | null
           id?: string
           is_published?: boolean | null
           order_index?: number | null
+          price?: number | null
           thumbnail_url?: string | null
           title: string
           updated_at?: string
@@ -103,9 +107,11 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          features?: string[] | null
           id?: string
           is_published?: boolean | null
           order_index?: number | null
+          price?: number | null
           thumbnail_url?: string | null
           title?: string
           updated_at?: string
