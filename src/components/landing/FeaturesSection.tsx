@@ -19,7 +19,7 @@ const courses = [
   {
     icon: Calculator,
     title: "Xisaabta (Mathematics)",
-    description: "Baro xisaabta aasaasiga ah, algebra, iyo xisaabaadka ganacsiga. Si sahlan oo waxtarsan.",
+    description: "Baro xisaabta aasaasiga ah, Kudar, Kajar, Kudhufasho, Qeybin. Si sahlan oo waxtarsan.",
     color: "text-secondary",
     bgColor: "bg-secondary/10",
   },
