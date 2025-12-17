@@ -203,13 +203,13 @@ const Register = () => {
               Ku soo biir Caagane Academy
             </h2>
             <p className="text-primary-foreground/80 text-lg mb-8">
-              Baro English-ka oo heerka ugu sareeya ah. Waxaad heli doontaa 
+              Baro subjects kala duwan. Waxaad heli doontaa 
               casharado, AI tutor, iyo macalin gaar ah.
             </p>
             
             <div className="bg-primary-foreground/10 backdrop-blur-lg rounded-2xl p-6 border border-primary-foreground/20">
-              <p className="text-3xl font-display font-bold mb-2">$7/bilaha</p>
-              <p className="text-primary-foreground/70">Hel dhammaan waxyaabaha</p>
+              <p className="text-2xl font-display font-bold mb-2">Caagane Academy</p>
+              <p className="text-primary-foreground/70">Waxbarasho tayo leh</p>
             </div>
           </motion.div>
         </div>
