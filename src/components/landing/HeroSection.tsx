@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { GraduationCap, BookOpen, Users, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import heroImage from "@/assets/hero-learning.jpg";
-import caaganelogo from "@/assets/caagane-academy-logo.jpg";
 
 const HeroSection = () => {
   return (
@@ -28,8 +27,7 @@ const HeroSection = () => {
             </div>
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold leading-tight">
-              Baro <span className="gradient-text">Xirfadaha</span> Cusub
-              <span className="text-secondary"> Online</span>
+              <span className="gradient-text">CAAGANE ACADEMY</span>
             </h1>
             
             <p className="text-lg text-muted-foreground max-w-xl">
