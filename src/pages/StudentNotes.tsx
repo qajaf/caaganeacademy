@@ -131,15 +131,66 @@ const StudentNotes = () => {
     
     setAiLoading(true);
     try {
-      const response = await supabase.functions.invoke('ai-tutor', {
-        body: { 
-          message: `Waxaan qoray notes-kan, fadlan i caawin si aan u hagaajiyo ama u ballaariyoo: "${formData.content}". Ka jawaab Somali.` 
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-tutor`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            messages: [
+              { role: "user", content: `Waxaan qoray notes-kan, fadlan i caawin si aan u hagaajiyo ama u ballaariyoo: "${formData.content}". Ka jawaab Somali.` }
+            ],
+            languageLevel: "beginner"
+          }),
         }
-      });
+      );
 
-      if (response.error) throw response.error;
-      
-      const aiSuggestion = response.data?.reply || response.data?.message;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to get response");
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("No response body");
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let aiSuggestion = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex;
+        while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
+          let line = buffer.slice(0, newlineIndex);
+          buffer = buffer.slice(newlineIndex + 1);
+
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (line.startsWith(":") || line.trim() === "") continue;
+          if (!line.startsWith("data: ")) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === "[DONE]") break;
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) {
+              aiSuggestion += content;
+            }
+          } catch {
+            buffer = line + "\n" + buffer;
+            break;
+          }
+        }
+      }
+
       if (aiSuggestion) {
         setFormData({ ...formData, content: formData.content + "\n\n--- AI Suggestion ---\n" + aiSuggestion });
         toast({ title: "AI waa ku caawiyay!", description: "Eeg qoraalka hoose" });
