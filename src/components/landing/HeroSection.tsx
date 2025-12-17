@@ -38,12 +38,12 @@ const HeroSection = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button variant="hero" size="xl" asChild>
-                <Link to="/register">
-                  <GraduationCap className="w-5 h-5" />
-                  Bilow Hadda - $7/bilaha
-                </Link>
-              </Button>
+            <Button variant="hero" size="xl" asChild>
+              <Link to="/register">
+                <GraduationCap className="w-5 h-5" />
+                Bilow Hadda
+              </Link>
+            </Button>
               <Button variant="outline" size="xl" asChild>
                 <Link to="/auth">
                   Haddii aad xubin tahay? Soo gal
@@ -68,7 +68,7 @@ const HeroSection = () => {
                 transition={{ delay: 0.4 }}
                 className="space-y-1"
               >
-                <p className="text-3xl font-display font-bold text-secondary">500+</p>
+                <p className="text-3xl font-display font-bold text-secondary">100+</p>
                 <p className="text-sm text-muted-foreground">Casharood</p>
               </motion.div>
               <motion.div
