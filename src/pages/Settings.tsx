@@ -98,10 +98,10 @@ const Settings = () => {
     setUploadingAvatar(true);
 
     try {
-      // Create a unique filename
+      // Create a unique filename with user_id as folder
       const fileExt = file.name.split(".").pop();
-      const fileName = `${user!.id}-${Date.now()}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${user!.id}/${fileName}`;
 
       // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
