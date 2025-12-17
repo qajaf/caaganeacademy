@@ -12,6 +12,7 @@ interface Course {
   thumbnail_url: string | null;
   price: number;
   features: string[];
+  instructor_name: string | null;
 }
 
 const CoursesSection = () => {
@@ -26,7 +27,7 @@ const CoursesSection = () => {
     try {
       const { data, error } = await supabase
         .from("courses")
-        .select("id, title, description, thumbnail_url, price, features")
+        .select("id, title, description, thumbnail_url, price, features, instructor_name")
         .eq("is_published", true)
         .order("order_index", { ascending: true });
 
@@ -102,6 +103,10 @@ const CoursesSection = () => {
               </div>
 
               <div className="p-6">
+                <div className="flex items-center gap-2 mb-2 text-sm text-muted-foreground">
+                  <span>by</span>
+                  <span className="font-medium text-primary">{course.instructor_name || 'Caagane'}</span>
+                </div>
                 <h3 className="text-xl font-display font-bold mb-2">{course.title}</h3>
                 <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
                   {course.description || "Baro xirfadaha casriga ah"}

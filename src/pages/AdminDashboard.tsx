@@ -9,6 +9,7 @@ import AdminStudents from "@/components/admin/AdminStudents";
 import AdminCourses from "@/components/admin/AdminCourses";
 import AdminCourseAccess from "@/components/admin/AdminCourseAccess";
 import AdminBookings from "@/components/admin/AdminBookings";
+import AdminStudentProgress from "@/components/admin/AdminStudentProgress";
 
 const AdminDashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -65,6 +66,8 @@ const AdminDashboard = () => {
         return <AdminCourses />;
       case "students":
         return <AdminStudents />;
+      case "progress":
+        return <AdminStudentProgress />;
       case "access":
         return <AdminCourseAccess />;
       case "bookings":
