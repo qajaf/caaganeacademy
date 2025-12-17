@@ -34,6 +34,8 @@ interface Course {
   is_published: boolean;
   order_index: number;
   created_at: string;
+  price: number;
+  features: string[];
   playlists_count?: number;
 }
 
@@ -49,6 +51,8 @@ const AdminCourses = () => {
     description: "",
     thumbnail_url: "",
     is_published: false,
+    price: 0,
+    features: "",
   });
   const { toast } = useToast();
 
@@ -94,6 +98,11 @@ const AdminCourses = () => {
     setSaving(true);
 
     try {
+      const featuresArray = formData.features
+        .split("\n")
+        .map((f) => f.trim())
+        .filter((f) => f.length > 0);
+
       if (editingCourse) {
         const { error } = await supabase
           .from("courses")
@@ -102,6 +111,8 @@ const AdminCourses = () => {
             description: formData.description || null,
             thumbnail_url: formData.thumbnail_url || null,
             is_published: formData.is_published,
+            price: formData.price,
+            features: featuresArray,
           })
           .eq("id", editingCourse.id);
 
@@ -113,6 +124,8 @@ const AdminCourses = () => {
           description: formData.description || null,
           thumbnail_url: formData.thumbnail_url || null,
           is_published: formData.is_published,
+          price: formData.price,
+          features: featuresArray,
           order_index: courses.length,
         });
 
@@ -122,7 +135,7 @@ const AdminCourses = () => {
 
       setDialogOpen(false);
       setEditingCourse(null);
-      setFormData({ title: "", description: "", thumbnail_url: "", is_published: false });
+      setFormData({ title: "", description: "", thumbnail_url: "", is_published: false, price: 0, features: "" });
       fetchCourses();
     } catch (error) {
       console.error("Error saving course:", error);
@@ -161,6 +174,8 @@ const AdminCourses = () => {
       description: course.description || "",
       thumbnail_url: course.thumbnail_url || "",
       is_published: course.is_published,
+      price: course.price || 0,
+      features: (course.features || []).join("\n"),
     });
     setDialogOpen(true);
   };
@@ -193,7 +208,7 @@ const AdminCourses = () => {
           setDialogOpen(open);
           if (!open) {
             setEditingCourse(null);
-            setFormData({ title: "", description: "", thumbnail_url: "", is_published: false });
+            setFormData({ title: "", description: "", thumbnail_url: "", is_published: false, price: 0, features: "" });
           }
         }}>
           <DialogTrigger asChild>
@@ -237,6 +252,28 @@ const AdminCourses = () => {
                   value={formData.thumbnail_url}
                   onChange={(e) => setFormData({ ...formData, thumbnail_url: e.target.value })}
                   placeholder="https://example.com/image.jpg"
+                />
+              </div>
+              <div>
+                <Label htmlFor="price">Qiimaha ($ bishii)</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                  placeholder="7"
+                />
+              </div>
+              <div>
+                <Label htmlFor="features">Waxa Ardaygu Helayo (mid kasta sadar cusub)</Label>
+                <Textarea
+                  id="features"
+                  value={formData.features}
+                  onChange={(e) => setFormData({ ...formData, features: e.target.value })}
+                  placeholder="Video lessons oo dhamaystiran&#10;AI Tutor&#10;PDF resources&#10;Teacher support"
+                  rows={4}
                 />
               </div>
               <div className="flex items-center justify-between">
@@ -308,12 +345,15 @@ const AdminCourses = () => {
               </div>
               <div className="p-4">
                 <h3 className="font-semibold text-lg mb-1">{course.title}</h3>
-                <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                   {course.description || "No description"}
                 </p>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                  <BookOpen className="w-4 h-4" />
-                  <span>{course.playlists_count} playlists</span>
+                <div className="flex items-center gap-4 text-sm mb-4">
+                  <span className="font-bold text-primary">${course.price || 0}/bishii</span>
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <BookOpen className="w-4 h-4" />
+                    {course.playlists_count} playlists
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
