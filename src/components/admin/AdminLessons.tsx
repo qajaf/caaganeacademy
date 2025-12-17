@@ -25,6 +25,7 @@ import {
   Play,
   Clock,
   Upload,
+  Link2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -87,6 +88,7 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
     description: "",
     file_url: "",
     file_type: "pdf",
+    resource_type: "file" as "file" | "link",
   });
   const [noteContent, setNoteContent] = useState("");
   const [uploadingPdf, setUploadingPdf] = useState(false);
@@ -208,14 +210,14 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
         title: resourceForm.title,
         description: resourceForm.description || null,
         file_url: resourceForm.file_url,
-        file_type: resourceForm.file_type,
+        file_type: resourceForm.resource_type === "link" ? "link" : resourceForm.file_type,
         lesson_id: selectedLessonId,
       });
 
       if (error) throw error;
       toast({ title: "Success", description: "Resource added successfully" });
       setResourceDialogOpen(false);
-      setResourceForm({ title: "", description: "", file_url: "", file_type: "pdf" });
+      setResourceForm({ title: "", description: "", file_url: "", file_type: "pdf", resource_type: "file" });
     } catch (error) {
       console.error("Error adding resource:", error);
       toast({
@@ -454,7 +456,7 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
                   }}
                 >
                   <FileText className="w-4 h-4 mr-1" />
-                  Add PDF
+                  Add Resource
                 </Button>
                 <Button
                   variant="outline"
@@ -493,16 +495,44 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Ku dar Resource</DialogTitle>
-            <DialogDescription>Ku dar PDF ama file kale casharka</DialogDescription>
+            <DialogDescription>Ku dar PDF, file, ama link casharka</DialogDescription>
           </DialogHeader>
           <form onSubmit={addResource} className="space-y-4">
+            {/* Resource Type Toggle */}
+            <div className="flex gap-2 p-1 bg-muted rounded-lg">
+              <button
+                type="button"
+                className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                  resourceForm.resource_type === "file"
+                    ? "bg-background shadow text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                onClick={() => setResourceForm({ ...resourceForm, resource_type: "file" })}
+              >
+                <FileText className="w-4 h-4" />
+                File / PDF
+              </button>
+              <button
+                type="button"
+                className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                  resourceForm.resource_type === "link"
+                    ? "bg-background shadow text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                onClick={() => setResourceForm({ ...resourceForm, resource_type: "link" })}
+              >
+                <Link2 className="w-4 h-4" />
+                Link
+              </button>
+            </div>
+
             <div>
               <Label htmlFor="resource-title">Magaca *</Label>
               <Input
                 id="resource-title"
                 value={resourceForm.title}
                 onChange={(e) => setResourceForm({ ...resourceForm, title: e.target.value })}
-                placeholder="Tusaale: Lesson Notes PDF"
+                placeholder={resourceForm.resource_type === "link" ? "Tusaale: Useful Website" : "Tusaale: Lesson Notes PDF"}
                 required
               />
             </div>
@@ -515,51 +545,67 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
                 placeholder="Sharaxaad gaaban"
               />
             </div>
-            <div>
-              <Label>File (PDF/Document)</Label>
-              <div className="flex items-center gap-2">
+
+            {resourceForm.resource_type === "link" ? (
+              <div>
+                <Label htmlFor="link-url">Link URL *</Label>
                 <Input
+                  id="link-url"
                   value={resourceForm.file_url}
                   onChange={(e) => setResourceForm({ ...resourceForm, file_url: e.target.value })}
-                  placeholder="URL ama upload"
-                  className="flex-1"
+                  placeholder="https://example.com/resource"
+                  type="url"
+                  required
                 />
-                <input
-                  type="file"
-                  ref={pdfInputRef}
-                  className="hidden"
-                  accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    setUploadingPdf(true);
-                    try {
-                      const fileName = `resource-${Date.now()}.${file.name.split('.').pop()}`;
-                      const { error: uploadError } = await supabase.storage
-                        .from('course-files')
-                        .upload(fileName, file);
-                      if (uploadError) throw uploadError;
-                      const { data: urlData } = supabase.storage.from('course-files').getPublicUrl(fileName);
-                      setResourceForm({ ...resourceForm, file_url: urlData.publicUrl });
-                      toast({ title: "Success", description: "File uploaded" });
-                    } catch (error) {
-                      console.error(error);
-                      toast({ title: "Error", description: "Failed to upload file", variant: "destructive" });
-                    } finally {
-                      setUploadingPdf(false);
-                    }
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => pdfInputRef.current?.click()}
-                  disabled={uploadingPdf}
-                >
-                  {uploadingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                </Button>
               </div>
-            </div>
+            ) : (
+              <div>
+                <Label>File (PDF/Document)</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={resourceForm.file_url}
+                    onChange={(e) => setResourceForm({ ...resourceForm, file_url: e.target.value })}
+                    placeholder="URL ama upload"
+                    className="flex-1"
+                  />
+                  <input
+                    type="file"
+                    ref={pdfInputRef}
+                    className="hidden"
+                    accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setUploadingPdf(true);
+                      try {
+                        const fileName = `resource-${Date.now()}.${file.name.split('.').pop()}`;
+                        const { error: uploadError } = await supabase.storage
+                          .from('course-files')
+                          .upload(fileName, file);
+                        if (uploadError) throw uploadError;
+                        const { data: urlData } = supabase.storage.from('course-files').getPublicUrl(fileName);
+                        setResourceForm({ ...resourceForm, file_url: urlData.publicUrl });
+                        toast({ title: "Success", description: "File uploaded" });
+                      } catch (error) {
+                        console.error(error);
+                        toast({ title: "Error", description: "Failed to upload file", variant: "destructive" });
+                      } finally {
+                        setUploadingPdf(false);
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => pdfInputRef.current?.click()}
+                    disabled={uploadingPdf}
+                  >
+                    {uploadingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <Button type="submit" className="w-full" disabled={saving}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Ku dar Resource"}
             </Button>
