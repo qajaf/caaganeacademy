@@ -11,6 +11,8 @@ import {
   PlayCircle,
   Search,
   Loader2,
+  BookOpen,
+  Calendar,
 } from "lucide-react";
 
 interface StudentProgress {
@@ -22,20 +24,16 @@ interface StudentProgress {
   video_stop_second: number;
   video_duration_seconds: number;
   last_watched_at: string;
-  lesson?: {
-    title: string;
-    duration_minutes: number;
-    playlist?: {
-      title: string;
-      course?: {
-        title: string;
-      };
-    };
-  };
-  profile?: {
-    full_name: string;
-    email: string;
-  };
+  lesson_title?: string;
+  playlist_title?: string;
+  course_title?: string;
+}
+
+interface Profile {
+  id: string;
+  user_id: string;
+  full_name: string;
+  email: string;
 }
 
 interface StudentSummary {
@@ -45,6 +43,7 @@ interface StudentSummary {
   total_lessons_watched: number;
   completed_lessons: number;
   total_watch_time_minutes: number;
+  last_activity: string;
   progress_items: StudentProgress[];
 }
 
@@ -60,57 +59,105 @@ const AdminStudentProgress = () => {
 
   const fetchStudentProgress = async () => {
     try {
-      // Get all progress with lesson and profile info
+      // Fetch all profiles first
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, user_id, full_name, email");
+
+      if (profilesError) throw profilesError;
+
+      const profilesMap = new Map<string, Profile>();
+      (profilesData || []).forEach((p: Profile) => {
+        profilesMap.set(p.user_id, p);
+      });
+
+      // Fetch all progress data
       const { data: progressData, error: progressError } = await supabase
         .from("student_progress")
-        .select(`
-          *,
-          profiles!student_progress_user_id_fkey (full_name, email)
-        `)
+        .select("*")
         .order("last_watched_at", { ascending: false });
 
       if (progressError) throw progressError;
 
-      // Get lesson info separately
+      // Get lesson info
       const lessonIds = [...new Set((progressData || []).map(p => p.lesson_id))];
-      const { data: lessonsData } = await supabase
-        .from("lessons")
-        .select(`
-          id, title, duration_minutes,
-          playlists!lessons_playlist_id_fkey (title, course_id, courses (title))
-        `)
-        .in("id", lessonIds);
+      
+      let lessonsMap = new Map<string, any>();
+      if (lessonIds.length > 0) {
+        const { data: lessonsData } = await supabase
+          .from("lessons")
+          .select("id, title, duration_minutes, playlist_id")
+          .in("id", lessonIds);
 
-      const lessonsMap = new Map((lessonsData || []).map(l => [l.id, l]));
+        // Get playlist info
+        const playlistIds = [...new Set((lessonsData || []).map(l => l.playlist_id))];
+        let playlistsMap = new Map<string, any>();
+        
+        if (playlistIds.length > 0) {
+          const { data: playlistsData } = await supabase
+            .from("playlists")
+            .select("id, title, course_id")
+            .in("id", playlistIds);
+
+          // Get course info
+          const courseIds = [...new Set((playlistsData || []).map(p => p.course_id).filter(Boolean))];
+          let coursesMap = new Map<string, any>();
+          
+          if (courseIds.length > 0) {
+            const { data: coursesData } = await supabase
+              .from("courses")
+              .select("id, title")
+              .in("id", courseIds);
+            
+            (coursesData || []).forEach(c => coursesMap.set(c.id, c));
+          }
+
+          (playlistsData || []).forEach(p => {
+            playlistsMap.set(p.id, {
+              ...p,
+              course: p.course_id ? coursesMap.get(p.course_id) : null
+            });
+          });
+        }
+
+        (lessonsData || []).forEach(l => {
+          lessonsMap.set(l.id, {
+            ...l,
+            playlist: playlistsMap.get(l.playlist_id)
+          });
+        });
+      }
 
       // Group by student
       const studentMap = new Map<string, StudentSummary>();
       
       (progressData || []).forEach((p: any) => {
         const lesson = lessonsMap.get(p.lesson_id);
+        const profile = profilesMap.get(p.user_id);
+        
         const progressItem: StudentProgress = {
-          ...p,
-          lesson: lesson ? {
-            title: lesson.title,
-            duration_minutes: lesson.duration_minutes,
-            playlist: lesson.playlists ? {
-              title: lesson.playlists.title,
-              course: lesson.playlists.courses ? {
-                title: lesson.playlists.courses.title
-              } : undefined
-            } : undefined
-          } : undefined,
-          profile: p.profiles
+          id: p.id,
+          user_id: p.user_id,
+          lesson_id: p.lesson_id,
+          is_completed: p.is_completed || false,
+          watched_seconds: p.watched_seconds || 0,
+          video_stop_second: p.video_stop_second || 0,
+          video_duration_seconds: p.video_duration_seconds || 0,
+          last_watched_at: p.last_watched_at,
+          lesson_title: lesson?.title || "Unknown Lesson",
+          playlist_title: lesson?.playlist?.title || "",
+          course_title: lesson?.playlist?.course?.title || "",
         };
 
         if (!studentMap.has(p.user_id)) {
           studentMap.set(p.user_id, {
             user_id: p.user_id,
-            full_name: p.profiles?.full_name || "Unknown",
-            email: p.profiles?.email || "",
+            full_name: profile?.full_name || "Unknown",
+            email: profile?.email || "",
             total_lessons_watched: 0,
             completed_lessons: 0,
             total_watch_time_minutes: 0,
+            last_activity: p.last_watched_at,
             progress_items: []
           });
         }
@@ -120,6 +167,11 @@ const AdminStudentProgress = () => {
         student.total_lessons_watched++;
         if (p.is_completed) student.completed_lessons++;
         student.total_watch_time_minutes += Math.round((p.watched_seconds || 0) / 60);
+        
+        // Update last activity to most recent
+        if (new Date(p.last_watched_at) > new Date(student.last_activity)) {
+          student.last_activity = p.last_watched_at;
+        }
       });
 
       setStudents(Array.from(studentMap.values()));
@@ -134,6 +186,17 @@ const AdminStudentProgress = () => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return "Maanta";
+    if (diffDays === 1) return "Shalay";
+    if (diffDays < 7) return `${diffDays} maalmood kahor`;
+    return date.toLocaleDateString('so-SO');
   };
 
   const filteredStudents = students.filter(s => 
@@ -162,18 +225,34 @@ const AdminStudentProgress = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-card rounded-xl border border-border p-4">
-            <p className="text-sm text-muted-foreground mb-1">Casharada La Daawade</p>
+            <div className="flex items-center gap-2 mb-2">
+              <BookOpen className="w-4 h-4 text-primary" />
+              <p className="text-sm text-muted-foreground">Casharada La Daawade</p>
+            </div>
             <p className="text-2xl font-bold">{selectedStudent.total_lessons_watched}</p>
           </div>
           <div className="bg-card rounded-xl border border-border p-4">
-            <p className="text-sm text-muted-foreground mb-1">Dhamaystiray</p>
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle className="w-4 h-4 text-success" />
+              <p className="text-sm text-muted-foreground">Dhamaystiray</p>
+            </div>
             <p className="text-2xl font-bold text-success">{selectedStudent.completed_lessons}</p>
           </div>
           <div className="bg-card rounded-xl border border-border p-4">
-            <p className="text-sm text-muted-foreground mb-1">Waqtiga Guud (daqiiqo)</p>
-            <p className="text-2xl font-bold">{selectedStudent.total_watch_time_minutes}</p>
+            <div className="flex items-center gap-2 mb-2">
+              <Clock className="w-4 h-4 text-secondary" />
+              <p className="text-sm text-muted-foreground">Waqtiga Guud</p>
+            </div>
+            <p className="text-2xl font-bold">{selectedStudent.total_watch_time_minutes} daqiiqo</p>
+          </div>
+          <div className="bg-card rounded-xl border border-border p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Calendar className="w-4 h-4 text-accent" />
+              <p className="text-sm text-muted-foreground">Ugu Dambeyntii</p>
+            </div>
+            <p className="text-lg font-bold">{formatDate(selectedStudent.last_activity)}</p>
           </div>
         </div>
 
@@ -189,33 +268,38 @@ const AdminStudentProgress = () => {
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium">{p.lesson?.title || "Unknown Lesson"}</p>
+                  <p className="font-medium">{p.lesson_title}</p>
                   <p className="text-sm text-muted-foreground">
-                    {p.lesson?.playlist?.course?.title} → {p.lesson?.playlist?.title}
+                    {p.course_title && `${p.course_title} → `}{p.playlist_title}
                   </p>
                 </div>
                 <div className="text-right">
                   {p.is_completed ? (
-                    <span className="inline-flex items-center gap-1 text-success text-sm">
+                    <span className="inline-flex items-center gap-1 text-success text-sm font-medium">
                       <CheckCircle className="w-4 h-4" />
-                      Dhamaystiray
+                      Dhamaystiray ✓
                     </span>
                   ) : (
-                    <span className="text-sm text-muted-foreground">
-                      <PlayCircle className="w-4 h-4 inline mr-1" />
-                      Joojiyay: {formatTime(p.video_stop_second || 0)}
-                    </span>
+                    <div>
+                      <span className="text-sm text-orange-500 font-medium">
+                        <PlayCircle className="w-4 h-4 inline mr-1" />
+                        Joojiyay
+                      </span>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Daqiiqo: {formatTime(p.video_stop_second)} / {formatTime(p.video_duration_seconds || 0)}
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
-              <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
+              <div className="mt-3 pt-3 border-t border-border flex items-center gap-4 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Clock className="w-3 h-3" />
-                  Daawadaha: {formatTime(p.watched_seconds || 0)}
+                  Daawadaha: {formatTime(p.watched_seconds)}
                 </span>
                 <span>|</span>
                 <span>
-                  Last: {new Date(p.last_watched_at).toLocaleDateString('so-SO')}
+                  {formatDate(p.last_watched_at)}
                 </span>
               </div>
             </motion.div>
@@ -268,20 +352,23 @@ const AdminStudentProgress = () => {
                 <div>
                   <p className="font-semibold">{student.full_name}</p>
                   <p className="text-sm text-muted-foreground">{student.email}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Ugu dambeyntii: {formatDate(student.last_activity)}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-6 text-sm">
                 <div className="text-center">
                   <p className="font-bold text-lg">{student.total_lessons_watched}</p>
-                  <p className="text-muted-foreground">Daawade</p>
+                  <p className="text-muted-foreground text-xs">Daawade</p>
                 </div>
                 <div className="text-center">
                   <p className="font-bold text-lg text-success">{student.completed_lessons}</p>
-                  <p className="text-muted-foreground">Dhamaystiray</p>
+                  <p className="text-muted-foreground text-xs">Dhamaystiray</p>
                 </div>
                 <div className="text-center">
                   <p className="font-bold text-lg">{student.total_watch_time_minutes}</p>
-                  <p className="text-muted-foreground">Daqiiqo</p>
+                  <p className="text-muted-foreground text-xs">Daqiiqo</p>
                 </div>
               </div>
             </motion.div>

@@ -4,8 +4,7 @@ import {
   Brain, 
   Calculator, 
   Monitor, 
-  Palette, 
-  Calendar 
+  Palette
 } from "lucide-react";
 
 const courses = [
@@ -44,13 +43,6 @@ const courses = [
     color: "text-primary",
     bgColor: "bg-primary/10",
   },
-  {
-    icon: Calendar,
-    title: "Ballamo Macalin",
-    description: "Qabso ballamo gaara macalinka. Hel jawaab gaar ah iyo talo.",
-    color: "text-secondary",
-    bgColor: "bg-secondary/10",
-  },
 ];
 
 const FeaturesSection = () => {
@@ -72,7 +64,7 @@ const FeaturesSection = () => {
           </h2>
           <p className="text-lg text-muted-foreground">
             Waxaan bixinaa courses kala duwan oo loogu talagalay in lagugu xirfadaysiyo 
-            xirfadaha casriga ah ee suuqa shaqada loo baahan yahay.
+            xirfadaha muhiim ah ee suuqa shaqada loo baahan yahay.
           </p>
         </motion.div>
         
