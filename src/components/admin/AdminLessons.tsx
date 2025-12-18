@@ -95,6 +95,7 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -341,9 +342,8 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
                 <div className="flex items-center gap-2">
                   <input
                     type="file"
-                    ref={useRef<HTMLInputElement>(null)}
+                    ref={videoInputRef}
                     className="hidden"
-                    id="video-upload"
                     accept="video/*"
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
@@ -375,7 +375,7 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => document.getElementById('video-upload')?.click()}
+                    onClick={() => videoInputRef.current?.click()}
                     disabled={saving}
                   >
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
