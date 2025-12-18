@@ -1,28 +1,45 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Check, Star, Zap, Crown, Calendar } from "lucide-react";
+import { Check, Zap, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
-const allCourseBenefits = [
-  "Dhammaan casharada oo dhan",
-  "AI tutor 24/7",
-  "PDF iyo files download",
-  "Notes personal ah",
-  "Progress tracking",
-  "Grammar correction",
-  "Waligaa la furanyahay",
-];
-
-const monthlyBenefits = [
-  "Dhammaan casharada oo dhan",
-  "AI tutor 24/7",
-  "PDF iyo files download",
-  "Notes personal ah",
-  "Progress tracking",
-  "Bil walba lagu bixin karaa",
-];
+interface Course {
+  id: string;
+  title: string;
+  description: string | null;
+  thumbnail_url: string | null;
+  price: number;
+  features: string[];
+  instructor_name: string | null;
+}
 
 const PricingSection = () => {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("courses")
+          .select("id, title, description, thumbnail_url, price, features, instructor_name")
+          .eq("is_published", true)
+          .order("order_index", { ascending: true });
+
+        if (error) throw error;
+        setCourses(data || []);
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
   return (
     <section className="py-24 relative" id="pricing">
       <div className="container mx-auto px-4">
@@ -46,125 +63,99 @@ const PricingSection = () => {
             Wax qarsoodi ah majiraan.
           </p>
         </motion.div>
-        
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {/* All Courses - $33 */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            <div className="relative h-full">
-              {/* Glow effect */}
-              <div className="absolute inset-0 bg-gradient-accent blur-3xl opacity-20 rounded-3xl" />
-              
-              <div className="relative bg-card rounded-3xl border-2 border-accent/30 p-8 shadow-lg h-full flex flex-col">
-                {/* Popular badge */}
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                  <div className="flex items-center gap-1.5 px-4 py-1.5 bg-accent text-accent-foreground rounded-full text-sm font-semibold shadow-accent">
-                    <Star className="w-4 h-4 fill-current" />
-                    Ugu Fiican
-                  </div>
-                </div>
-                
-                <div className="text-center mb-8">
-                  <div className="w-16 h-16 bg-accent/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Crown className="w-8 h-8 text-accent" />
-                  </div>
-                  <h3 className="text-2xl font-display font-bold mb-2">Dhammaan Courses</h3>
-                  <p className="text-muted-foreground mb-6">Wax kasta waligaa</p>
-                  
-                  <div className="flex items-baseline justify-center gap-2">
-                    <span className="text-5xl md:text-6xl font-display font-bold">$33</span>
-                    <span className="text-xl text-muted-foreground">/waligaa</span>
-                  </div>
-                </div>
-                
-                <div className="space-y-4 mb-8 flex-1">
-                  {allCourseBenefits.map((benefit, index) => (
-                    <motion.div
-                      key={benefit}
-                      initial={{ opacity: 0, x: -20 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: index * 0.05 }}
-                      className="flex items-center gap-3"
-                    >
-                      <div className="w-6 h-6 rounded-full bg-success/20 flex items-center justify-center flex-shrink-0">
-                        <Check className="w-4 h-4 text-success" />
-                      </div>
-                      <span className="text-foreground">{benefit}</span>
-                    </motion.div>
-                  ))}
-                </div>
-                
-                <Button variant="hero" size="xl" className="w-full" asChild>
-                  <Link to="/register">
-                    Bilow Hadda
-                  </Link>
-                </Button>
-                
-                <p className="text-center text-sm text-muted-foreground mt-4">
-                  Waligaa lagama xiro
-                </p>
-              </div>
-            </div>
-          </motion.div>
 
-          {/* Monthly - $16 */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-          >
-            <div className="relative h-full">
-              <div className="relative bg-card rounded-3xl border border-border p-8 shadow-lg h-full flex flex-col">
-                <div className="text-center mb-8">
-                  <div className="w-16 h-16 bg-primary/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Calendar className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="text-2xl font-display font-bold mb-2">Bil Walba</h3>
-                  <p className="text-muted-foreground mb-6">Bil kastahoorteeda</p>
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : courses.length === 0 ? (
+          <div className="text-center text-muted-foreground">
+            <p>Ma jiraan courses hadda la heli karo</p>
+          </div>
+        ) : (
+          <div className={`grid gap-8 max-w-6xl mx-auto ${
+            courses.length === 1 ? 'md:grid-cols-1 max-w-md' : 
+            courses.length === 2 ? 'md:grid-cols-2 max-w-4xl' : 
+            'md:grid-cols-2 lg:grid-cols-3'
+          }`}>
+            {courses.map((course, index) => (
+              <motion.div
+                key={course.id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+              >
+                <div className="relative h-full">
+                  {index === 0 && (
+                    <div className="absolute inset-0 bg-gradient-accent blur-3xl opacity-20 rounded-3xl" />
+                  )}
                   
-                  <div className="flex items-baseline justify-center gap-2">
-                    <span className="text-5xl md:text-6xl font-display font-bold">$16</span>
-                    <span className="text-xl text-muted-foreground">/bil</span>
+                  <div className={`relative bg-card rounded-3xl p-8 shadow-lg h-full flex flex-col ${
+                    index === 0 ? 'border-2 border-accent/30' : 'border border-border'
+                  }`}>
+                    {/* Thumbnail */}
+                    {course.thumbnail_url && (
+                      <div className="aspect-video rounded-xl overflow-hidden mb-6 -mt-2">
+                        <img
+                          src={course.thumbnail_url}
+                          alt={course.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    
+                    <div className="text-center mb-6">
+                      <h3 className="text-2xl font-display font-bold mb-2">{course.title}</h3>
+                      {course.instructor_name && (
+                        <p className="text-sm text-muted-foreground mb-2">by {course.instructor_name}</p>
+                      )}
+                      {course.description && (
+                        <p className="text-muted-foreground text-sm line-clamp-2 mb-4">{course.description}</p>
+                      )}
+                      
+                      <div className="flex items-baseline justify-center gap-2">
+                        <span className="text-4xl md:text-5xl font-display font-bold">${course.price || 0}</span>
+                        <span className="text-lg text-muted-foreground">/bishii</span>
+                      </div>
+                    </div>
+                    
+                    {course.features && course.features.length > 0 && (
+                      <div className="space-y-3 mb-8 flex-1">
+                        {course.features.map((feature, featureIndex) => (
+                          <motion.div
+                            key={featureIndex}
+                            initial={{ opacity: 0, x: -20 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: featureIndex * 0.05 }}
+                            className="flex items-center gap-3"
+                          >
+                            <div className="w-5 h-5 rounded-full bg-success/20 flex items-center justify-center flex-shrink-0">
+                              <Check className="w-3 h-3 text-success" />
+                            </div>
+                            <span className="text-sm text-foreground">{feature}</span>
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    <Button 
+                      variant={index === 0 ? "hero" : "outline"} 
+                      size="xl" 
+                      className="w-full" 
+                      asChild
+                    >
+                      <Link to="/register">
+                        Bilow Hadda
+                      </Link>
+                    </Button>
                   </div>
                 </div>
-                
-                <div className="space-y-4 mb-8 flex-1">
-                  {monthlyBenefits.map((benefit, index) => (
-                    <motion.div
-                      key={benefit}
-                      initial={{ opacity: 0, x: -20 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: index * 0.05 }}
-                      className="flex items-center gap-3"
-                    >
-                      <div className="w-6 h-6 rounded-full bg-success/20 flex items-center justify-center flex-shrink-0">
-                        <Check className="w-4 h-4 text-success" />
-                      </div>
-                      <span className="text-foreground">{benefit}</span>
-                    </motion.div>
-                  ))}
-                </div>
-                
-                <Button variant="outline" size="xl" className="w-full" asChild>
-                  <Link to="/register">
-                    Bilow Hadda
-                  </Link>
-                </Button>
-                
-                <p className="text-center text-sm text-muted-foreground mt-4">
-                  Bil kasta lagu cusboonaysiin karaa
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

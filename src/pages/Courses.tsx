@@ -16,6 +16,8 @@ import {
   FileText,
   Download,
   LogOut,
+  CheckCircle,
+  Circle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -36,6 +38,11 @@ interface Course {
 
 interface CourseAccess {
   course_id: string;
+  is_approved: boolean;
+}
+
+interface PlaylistAccess {
+  playlist_id: string;
   is_approved: boolean;
 }
 
@@ -71,6 +78,11 @@ interface LessonNote {
   content: string;
 }
 
+interface LessonProgress {
+  lesson_id: string;
+  is_completed: boolean;
+}
+
 const Courses = () => {
   const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
@@ -78,6 +90,8 @@ const Courses = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
   const [courseAccess, setCourseAccess] = useState<CourseAccess[]>([]);
+  const [playlistAccess, setPlaylistAccess] = useState<PlaylistAccess[]>([]);
+  const [lessonProgress, setLessonProgress] = useState<LessonProgress[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
@@ -88,6 +102,7 @@ const Courses = () => {
   const [loading, setLoading] = useState(true);
   const [loadingPlaylists, setLoadingPlaylists] = useState(false);
   const [loadingLessons, setLoadingLessons] = useState(false);
+  const [markingComplete, setMarkingComplete] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -127,6 +142,22 @@ const Courses = () => {
         .eq("user_id", user!.id);
 
       setCourseAccess(accessData || []);
+
+      // Fetch playlist access
+      const { data: playlistAccessData } = await supabase
+        .from("student_playlist_access")
+        .select("playlist_id, is_approved")
+        .eq("user_id", user!.id);
+
+      setPlaylistAccess(playlistAccessData || []);
+
+      // Fetch lesson progress
+      const { data: progressData } = await supabase
+        .from("student_progress")
+        .select("lesson_id, is_completed")
+        .eq("user_id", user!.id);
+
+      setLessonProgress(progressData || []);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -137,6 +168,28 @@ const Courses = () => {
   const hasCourseAccess = (courseId: string) => {
     const access = courseAccess.find(a => a.course_id === courseId);
     return access?.is_approved === true;
+  };
+
+  const hasPlaylistAccess = (playlistId: string) => {
+    const access = playlistAccess.find(a => a.playlist_id === playlistId);
+    return access?.is_approved === true;
+  };
+
+  const isLessonCompleted = (lessonId: string) => {
+    const progress = lessonProgress.find(p => p.lesson_id === lessonId);
+    return progress?.is_completed === true;
+  };
+
+  const canAccessLesson = (lesson: Lesson, index: number) => {
+    // First lesson is always accessible if user has playlist access
+    if (index === 0) return true;
+    
+    // For other lessons, check if previous lesson is completed
+    const previousLesson = lessons[index - 1];
+    if (previousLesson) {
+      return isLessonCompleted(previousLesson.id);
+    }
+    return false;
   };
 
   const fetchPlaylists = async (courseId: string) => {
@@ -191,13 +244,84 @@ const Courses = () => {
     }
   };
 
+  const markLessonComplete = async () => {
+    if (!selectedLesson || !user) return;
+    
+    setMarkingComplete(true);
+    try {
+      // Check if progress exists
+      const { data: existing } = await supabase
+        .from("student_progress")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("lesson_id", selectedLesson.id)
+        .maybeSingle();
+
+      if (existing) {
+        // Update existing progress
+        const { error } = await supabase
+          .from("student_progress")
+          .update({ 
+            is_completed: true, 
+            completed_at: new Date().toISOString() 
+          })
+          .eq("id", existing.id);
+        
+        if (error) throw error;
+      } else {
+        // Create new progress
+        const { error } = await supabase
+          .from("student_progress")
+          .insert({
+            user_id: user.id,
+            lesson_id: selectedLesson.id,
+            is_completed: true,
+            completed_at: new Date().toISOString(),
+          });
+        
+        if (error) throw error;
+      }
+
+      // Update local state
+      setLessonProgress(prev => {
+        const existing = prev.find(p => p.lesson_id === selectedLesson.id);
+        if (existing) {
+          return prev.map(p => 
+            p.lesson_id === selectedLesson.id ? { ...p, is_completed: true } : p
+          );
+        }
+        return [...prev, { lesson_id: selectedLesson.id, is_completed: true }];
+      });
+
+      toast({
+        title: "Casharka waa la dhamaystay!",
+        description: "Casharka ku xiga ayaa furan yahay",
+      });
+    } catch (error) {
+      console.error("Error marking lesson complete:", error);
+      toast({
+        title: "Error",
+        description: "Ma suurtogelin in la dhamaystiro casharka",
+        variant: "destructive",
+      });
+    } finally {
+      setMarkingComplete(false);
+    }
+  };
+
   const handleCourseClick = (course: Course) => {
     setSelectedCourse(course);
     fetchPlaylists(course.id);
   };
 
   const handlePlaylistClick = (playlist: Playlist) => {
-    if (!selectedCourse || !hasCourseAccess(selectedCourse.id)) {
+    if (!selectedCourse) return;
+    
+    // Check both course and playlist access
+    const hasCourse = hasCourseAccess(selectedCourse.id);
+    const hasPlaylist = hasPlaylistAccess(playlist.id);
+    
+    if (!hasCourse || !hasPlaylist) {
       toast({
         title: "U baahan tahay lacag bixin",
         description: "Si aad u daawato casharada, la xiriir WhatsApp: +252711983546",
@@ -209,8 +333,13 @@ const Courses = () => {
     fetchLessons(playlist.id);
   };
 
-  const handleLessonClick = (lesson: Lesson) => {
-    if (!selectedCourse || !hasCourseAccess(selectedCourse.id)) {
+  const handleLessonClick = (lesson: Lesson, index: number) => {
+    if (!selectedCourse || !selectedPlaylist) return;
+    
+    const hasCourse = hasCourseAccess(selectedCourse.id);
+    const hasPlaylist = hasPlaylistAccess(selectedPlaylist.id);
+    
+    if (!hasCourse || !hasPlaylist) {
       toast({
         title: "U baahan tahay lacag bixin",
         description: "Si aad u daawato casharada, la xiriir WhatsApp: +252711983546",
@@ -218,6 +347,17 @@ const Courses = () => {
       });
       return;
     }
+
+    // Check if lesson is accessible (first lesson or previous completed)
+    if (!canAccessLesson(lesson, index)) {
+      toast({
+        title: "Casharka weli ma furan yahay",
+        description: "Fadlan dhamaystir casharka ka horeeyey si aad u furto kan",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSelectedLesson(lesson);
     fetchLessonDetails(lesson.id);
   };
@@ -246,9 +386,15 @@ const Courses = () => {
   }
 
   const currentCourseHasAccess = selectedCourse ? hasCourseAccess(selectedCourse.id) : false;
+  const currentPlaylistHasAccess = selectedPlaylist ? hasPlaylistAccess(selectedPlaylist.id) : false;
+  const hasFullAccess = currentCourseHasAccess && currentPlaylistHasAccess;
 
   // Lesson View
-  if (selectedLesson && currentCourseHasAccess) {
+  if (selectedLesson && hasFullAccess) {
+    const currentLessonIndex = lessons.findIndex(l => l.id === selectedLesson.id);
+    const isCurrentLessonCompleted = isLessonCompleted(selectedLesson.id);
+    const nextLesson = lessons[currentLessonIndex + 1];
+
     return (
       <div className="min-h-screen bg-background">
         <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
@@ -290,6 +436,51 @@ const Courses = () => {
               <h1 className="text-2xl font-display font-bold mb-2">{selectedLesson.title}</h1>
               {selectedLesson.description && (
                 <p className="text-muted-foreground mb-6">{selectedLesson.description}</p>
+              )}
+            </motion.div>
+
+            {/* Mark Complete Button */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="mb-6"
+            >
+              {isCurrentLessonCompleted ? (
+                <div className="flex items-center gap-3 p-4 bg-success/10 border border-success/30 rounded-xl">
+                  <CheckCircle className="w-6 h-6 text-success" />
+                  <div className="flex-1">
+                    <p className="font-semibold text-success">Casharka waa la dhamaystay!</p>
+                    {nextLesson && (
+                      <p className="text-sm text-muted-foreground">
+                        Casharka ku xiga: {nextLesson.title}
+                      </p>
+                    )}
+                  </div>
+                  {nextLesson && (
+                    <Button 
+                      onClick={() => handleLessonClick(nextLesson, currentLessonIndex + 1)}
+                      className="gap-2"
+                    >
+                      Casharka ku xiga
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <Button 
+                  onClick={markLessonComplete}
+                  disabled={markingComplete}
+                  className="w-full gap-2"
+                  size="lg"
+                >
+                  {markingComplete ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <CheckCircle className="w-5 h-5" />
+                  )}
+                  Sax saaro - Casharka waan dhamaystay
+                </Button>
               )}
             </motion.div>
 
@@ -406,8 +597,8 @@ const Courses = () => {
             <p className="text-muted-foreground mb-6">{selectedPlaylist.description}</p>
           )}
 
-          {/* Payment Notice for Users without Course Access */}
-          {!currentCourseHasAccess && (
+          {/* Payment Notice for Users without Access */}
+          {!hasFullAccess && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -437,48 +628,74 @@ const Courses = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {lessons.map((lesson, index) => (
-                <motion.div
-                  key={lesson.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  onClick={() => handleLessonClick(lesson)}
-                  className={`bg-card rounded-xl border border-border p-4 flex items-center gap-4 transition-all ${
-                    currentCourseHasAccess ? "cursor-pointer hover:shadow-md" : "cursor-not-allowed opacity-75"
-                  }`}
-                >
-                  <div className="w-24 h-16 bg-muted rounded-lg flex-shrink-0 overflow-hidden relative">
-                    {lesson.thumbnail_url ? (
-                      <img src={lesson.thumbnail_url} alt={lesson.title} className="w-full h-full object-cover" />
+              {lessons.map((lesson, index) => {
+                const isCompleted = isLessonCompleted(lesson.id);
+                const isAccessible = hasFullAccess && canAccessLesson(lesson, index);
+                const isLocked = !hasFullAccess || !canAccessLesson(lesson, index);
+
+                return (
+                  <motion.div
+                    key={lesson.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    onClick={() => handleLessonClick(lesson, index)}
+                    className={`bg-card rounded-xl border border-border p-4 flex items-center gap-4 transition-all ${
+                      isAccessible ? "cursor-pointer hover:shadow-md" : "cursor-not-allowed opacity-75"
+                    }`}
+                  >
+                    {/* Completion Status */}
+                    <div className="flex-shrink-0">
+                      {isCompleted ? (
+                        <div className="w-8 h-8 rounded-full bg-success/20 flex items-center justify-center">
+                          <CheckCircle className="w-5 h-5 text-success" />
+                        </div>
+                      ) : isAccessible ? (
+                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                          <Circle className="w-5 h-5 text-primary" />
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                          <Lock className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="w-24 h-16 bg-muted rounded-lg flex-shrink-0 overflow-hidden relative">
+                      {lesson.thumbnail_url ? (
+                        <img src={lesson.thumbnail_url} alt={lesson.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Play className="w-6 h-6 text-muted-foreground" />
+                        </div>
+                      )}
+                      {isLocked && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <Lock className="w-6 h-6 text-white" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold truncate">{lesson.title}</h3>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Clock className="w-4 h-4" />
+                        <span>{lesson.duration_minutes || 0} daqiiqo</span>
+                        {isCompleted && (
+                          <span className="text-success text-xs font-medium ml-2">✓ Dhamaystay</span>
+                        )}
+                      </div>
+                    </div>
+                    {isLocked ? (
+                      <div className="flex items-center gap-2 text-destructive">
+                        <Lock className="w-5 h-5" />
+                        <span className="text-xs font-medium">Xiran</span>
+                      </div>
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Play className="w-6 h-6 text-muted-foreground" />
-                      </div>
+                      <ChevronRight className="w-5 h-5 text-muted-foreground" />
                     )}
-                    {!currentCourseHasAccess && (
-                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                        <Lock className="w-6 h-6 text-white" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold truncate">{lesson.title}</h3>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Clock className="w-4 h-4" />
-                      <span>{lesson.duration_minutes || 0} daqiiqo</span>
-                    </div>
-                  </div>
-                  {!currentCourseHasAccess ? (
-                    <div className="flex items-center gap-2 text-destructive">
-                      <Lock className="w-5 h-5" />
-                      <span className="text-xs font-medium">Xiran</span>
-                    </div>
-                  ) : (
-                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                  )}
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -540,45 +757,49 @@ const Courses = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {playlists.map((playlist, index) => (
-                <motion.div
-                  key={playlist.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  onClick={() => handlePlaylistClick(playlist)}
-                  className={`bg-card rounded-2xl border border-border overflow-hidden transition-all ${
-                    currentCourseHasAccess ? "cursor-pointer hover:shadow-lg" : "cursor-pointer"
-                  }`}
-                >
-                  <div className="aspect-video bg-muted relative">
-                    {playlist.thumbnail_url ? (
-                      <img src={playlist.thumbnail_url} alt={playlist.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <BookOpen className="w-12 h-12 text-muted-foreground" />
-                      </div>
-                    )}
-                    {!currentCourseHasAccess && (
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                        <Lock className="w-8 h-8 text-white" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold text-lg mb-1">{playlist.title}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {playlist.description || "Casharo cusub"}
-                    </p>
-                    {!currentCourseHasAccess && (
-                      <div className="flex items-center gap-1 mt-2 text-destructive text-sm">
-                        <Lock className="w-4 h-4" />
-                        <span>Xiran - La xiriir +252711983546</span>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
+              {playlists.map((playlist, index) => {
+                const hasAccess = currentCourseHasAccess && hasPlaylistAccess(playlist.id);
+                
+                return (
+                  <motion.div
+                    key={playlist.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    onClick={() => handlePlaylistClick(playlist)}
+                    className={`bg-card rounded-2xl border border-border overflow-hidden transition-all ${
+                      hasAccess ? "cursor-pointer hover:shadow-lg" : "cursor-pointer"
+                    }`}
+                  >
+                    <div className="aspect-video bg-muted relative">
+                      {playlist.thumbnail_url ? (
+                        <img src={playlist.thumbnail_url} alt={playlist.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <BookOpen className="w-12 h-12 text-muted-foreground" />
+                        </div>
+                      )}
+                      {!hasAccess && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                          <Lock className="w-8 h-8 text-white" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-semibold text-lg mb-1">{playlist.title}</h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {playlist.description || "Casharo cusub"}
+                      </p>
+                      {!hasAccess && (
+                        <div className="flex items-center gap-1 mt-2 text-destructive text-sm">
+                          <Lock className="w-4 h-4" />
+                          <span>Xiran - La xiriir +252711983546</span>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
           )}
         </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import {
   Loader2,
   Video,
   ChevronRight,
+  Upload,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AdminLessons from "./AdminLessons";
@@ -50,6 +51,8 @@ const AdminPlaylists = () => {
     thumbnail_url: "",
     is_published: false,
   });
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -231,13 +234,49 @@ const AdminPlaylists = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="thumbnail">Sawirka (URL)</Label>
-                <Input
-                  id="thumbnail"
-                  value={formData.thumbnail_url}
-                  onChange={(e) => setFormData({ ...formData, thumbnail_url: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
-                />
+                <Label>Sawirka (Thumbnail)</Label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    ref={thumbnailInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setUploadingThumbnail(true);
+                      try {
+                        const fileName = `playlist-${Date.now()}.${file.name.split('.').pop()}`;
+                        const { error: uploadError } = await supabase.storage
+                          .from('thumbnails')
+                          .upload(fileName, file);
+                        if (uploadError) throw uploadError;
+                        const { data: urlData } = supabase.storage.from('thumbnails').getPublicUrl(fileName);
+                        setFormData({ ...formData, thumbnail_url: urlData.publicUrl });
+                        toast({ title: "Success", description: "Thumbnail uploaded" });
+                      } catch (error) {
+                        console.error(error);
+                        toast({ title: "Error", description: "Failed to upload thumbnail", variant: "destructive" });
+                      } finally {
+                        setUploadingThumbnail(false);
+                      }
+                    }}
+                  />
+                  <Input
+                    value={formData.thumbnail_url}
+                    readOnly
+                    placeholder="Upload thumbnail"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => thumbnailInputRef.current?.click()}
+                    disabled={uploadingThumbnail}
+                  >
+                    {uploadingThumbnail ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                  </Button>
+                </div>
               </div>
               <div className="flex items-center justify-between">
                 <Label htmlFor="published">La daabaco (Published)</Label>

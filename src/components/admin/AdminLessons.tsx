@@ -337,22 +337,95 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
                 />
               </div>
               <div>
-                <Label htmlFor="video-url">Video URL *</Label>
-                <Input
-                  id="video-url"
-                  value={formData.video_url}
-                  onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
-                  placeholder="https://youtube.com/watch?v=... ama link kale"
-                />
+                <Label>Video File *</Label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    ref={useRef<HTMLInputElement>(null)}
+                    className="hidden"
+                    id="video-upload"
+                    accept="video/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setSaving(true);
+                      try {
+                        const fileName = `video-${Date.now()}.${file.name.split('.').pop()}`;
+                        const { error: uploadError } = await supabase.storage
+                          .from('course-files')
+                          .upload(fileName, file);
+                        if (uploadError) throw uploadError;
+                        const { data: urlData } = supabase.storage.from('course-files').getPublicUrl(fileName);
+                        setFormData({ ...formData, video_url: urlData.publicUrl });
+                        toast({ title: "Success", description: "Video uploaded" });
+                      } catch (error) {
+                        console.error(error);
+                        toast({ title: "Error", description: "Failed to upload video", variant: "destructive" });
+                      } finally {
+                        setSaving(false);
+                      }
+                    }}
+                  />
+                  <Input
+                    value={formData.video_url}
+                    readOnly
+                    placeholder="Upload video file"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('video-upload')?.click()}
+                    disabled={saving}
+                  >
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                  </Button>
+                </div>
               </div>
               <div>
-                <Label htmlFor="lesson-thumbnail">Sawirka (Thumbnail URL)</Label>
-                <Input
-                  id="lesson-thumbnail"
-                  value={formData.thumbnail_url}
-                  onChange={(e) => setFormData({ ...formData, thumbnail_url: e.target.value })}
-                  placeholder="https://example.com/thumbnail.jpg"
-                />
+                <Label>Sawirka (Thumbnail)</Label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    ref={thumbnailInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setUploadingThumbnail(true);
+                      try {
+                        const fileName = `lesson-thumb-${Date.now()}.${file.name.split('.').pop()}`;
+                        const { error: uploadError } = await supabase.storage
+                          .from('thumbnails')
+                          .upload(fileName, file);
+                        if (uploadError) throw uploadError;
+                        const { data: urlData } = supabase.storage.from('thumbnails').getPublicUrl(fileName);
+                        setFormData({ ...formData, thumbnail_url: urlData.publicUrl });
+                        toast({ title: "Success", description: "Thumbnail uploaded" });
+                      } catch (error) {
+                        console.error(error);
+                        toast({ title: "Error", description: "Failed to upload thumbnail", variant: "destructive" });
+                      } finally {
+                        setUploadingThumbnail(false);
+                      }
+                    }}
+                  />
+                  <Input
+                    value={formData.thumbnail_url}
+                    readOnly
+                    placeholder="Upload thumbnail"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => thumbnailInputRef.current?.click()}
+                    disabled={uploadingThumbnail}
+                  >
+                    {uploadingThumbnail ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                  </Button>
+                </div>
               </div>
               <div>
                 <Label htmlFor="duration">Muddada (daqiiqo)</Label>
@@ -562,12 +635,6 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
               <div>
                 <Label>File (PDF/Document)</Label>
                 <div className="flex items-center gap-2">
-                  <Input
-                    value={resourceForm.file_url}
-                    onChange={(e) => setResourceForm({ ...resourceForm, file_url: e.target.value })}
-                    placeholder="URL ama upload"
-                    className="flex-1"
-                  />
                   <input
                     type="file"
                     ref={pdfInputRef}
@@ -593,6 +660,12 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
                         setUploadingPdf(false);
                       }
                     }}
+                  />
+                  <Input
+                    value={resourceForm.file_url}
+                    readOnly
+                    placeholder="Upload file"
+                    className="flex-1"
                   />
                   <Button
                     type="button"

@@ -270,12 +270,6 @@ const AdminCourses = () => {
               <div>
                 <Label>Sawirka (Thumbnail)</Label>
                 <div className="flex items-center gap-2">
-                  <Input
-                    value={formData.thumbnail_url}
-                    onChange={(e) => setFormData({ ...formData, thumbnail_url: e.target.value })}
-                    placeholder="URL ama upload"
-                    className="flex-1"
-                  />
                   <input
                     type="file"
                     ref={thumbnailInputRef}
@@ -301,6 +295,12 @@ const AdminCourses = () => {
                         setUploadingThumbnail(false);
                       }
                     }}
+                  />
+                  <Input
+                    value={formData.thumbnail_url}
+                    readOnly
+                    placeholder="Upload thumbnail"
+                    className="flex-1"
                   />
                   <Button
                     type="button"
