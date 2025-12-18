@@ -407,6 +407,41 @@ export type Database = {
         }
         Relationships: []
       }
+      student_playlist_access: {
+        Row: {
+          created_at: string
+          id: string
+          is_approved: boolean | null
+          playlist_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_approved?: boolean | null
+          playlist_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_approved?: boolean | null
+          playlist_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_playlist_access_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_progress: {
         Row: {
           completed_at: string | null
@@ -482,6 +517,10 @@ export type Database = {
     Functions: {
       has_course_access: {
         Args: { _course_id: string; _user_id: string }
+        Returns: boolean
+      }
+      has_playlist_access: {
+        Args: { _playlist_id: string; _user_id: string }
         Returns: boolean
       }
       has_role: {
