@@ -72,16 +72,21 @@ const FeaturesSection = () => {
           {courses.map((course, index) => (
             <motion.div
               key={course.title}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 30, scale: 0.95 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
+              transition={{ duration: 0.5, delay: index * 0.1, type: "spring", stiffness: 100 }}
+              whileHover={{ y: -8, scale: 1.02 }}
               className="group"
             >
-              <div className="h-full bg-card rounded-2xl p-8 border border-border hover:border-primary/30 transition-all duration-300 card-hover">
-                <div className={`w-14 h-14 ${course.bgColor} rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+              <div className="h-full bg-card rounded-2xl p-8 border border-border hover:border-primary/30 transition-all duration-500 card-hover-glow shimmer">
+                <motion.div 
+                  className={`w-14 h-14 ${course.bgColor} rounded-xl flex items-center justify-center mb-6`}
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
                   <course.icon className={`w-7 h-7 ${course.color}`} />
-                </div>
+                </motion.div>
                 
                 <h3 className="text-xl font-display font-semibold mb-3">
                   {course.title}

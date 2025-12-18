@@ -81,28 +81,37 @@ const PricingSection = () => {
             {courses.map((course, index) => (
               <motion.div
                 key={course.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0, y: 40, scale: 0.9 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
+                transition={{ duration: 0.6, delay: index * 0.15, type: "spring", stiffness: 80 }}
+                whileHover={{ y: -10, transition: { duration: 0.3 } }}
               >
-                <div className="relative h-full">
+                <div className="relative h-full group">
                   {index === 0 && (
-                    <div className="absolute inset-0 bg-gradient-accent blur-3xl opacity-20 rounded-3xl" />
+                    <motion.div 
+                      className="absolute inset-0 bg-gradient-accent blur-3xl opacity-20 rounded-3xl"
+                      animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.3, 0.2] }}
+                      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                    />
                   )}
                   
-                  <div className={`relative bg-card rounded-3xl p-8 shadow-lg h-full flex flex-col ${
-                    index === 0 ? 'border-2 border-accent/30' : 'border border-border'
+                  <div className={`relative bg-card rounded-3xl p-8 shadow-lg h-full flex flex-col transition-all duration-500 group-hover:shadow-2xl ${
+                    index === 0 ? 'border-2 border-accent/30 pulse-glow' : 'border border-border group-hover:border-primary/30'
                   }`}>
                     {/* Thumbnail */}
                     {course.thumbnail_url && (
-                      <div className="aspect-video rounded-xl overflow-hidden mb-6 -mt-2">
+                      <motion.div 
+                        className="aspect-video rounded-xl overflow-hidden mb-6 -mt-2"
+                        whileHover={{ scale: 1.02 }}
+                        transition={{ duration: 0.3 }}
+                      >
                         <img
                           src={course.thumbnail_url}
                           alt={course.title}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         />
-                      </div>
+                      </motion.div>
                     )}
                     
                     <div className="text-center mb-6">
@@ -114,10 +123,14 @@ const PricingSection = () => {
                         <p className="text-muted-foreground text-sm line-clamp-2 mb-4">{course.description}</p>
                       )}
                       
-                      <div className="flex items-baseline justify-center gap-2">
+                      <motion.div 
+                        className="flex items-baseline justify-center gap-2"
+                        initial={{ scale: 1 }}
+                        whileHover={{ scale: 1.05 }}
+                      >
                         <span className="text-4xl md:text-5xl font-display font-bold">${course.price || 0}</span>
                         <span className="text-lg text-muted-foreground">/bishii</span>
-                      </div>
+                      </motion.div>
                     </div>
                     
                     {course.features && course.features.length > 0 && (
@@ -128,28 +141,37 @@ const PricingSection = () => {
                             initial={{ opacity: 0, x: -20 }}
                             whileInView={{ opacity: 1, x: 0 }}
                             viewport={{ once: true }}
-                            transition={{ delay: featureIndex * 0.05 }}
+                            transition={{ delay: featureIndex * 0.05 + index * 0.1 }}
                             className="flex items-center gap-3"
                           >
-                            <div className="w-5 h-5 rounded-full bg-success/20 flex items-center justify-center flex-shrink-0">
+                            <motion.div 
+                              className="w-5 h-5 rounded-full bg-success/20 flex items-center justify-center flex-shrink-0"
+                              whileHover={{ scale: 1.2, rotate: 360 }}
+                              transition={{ duration: 0.3 }}
+                            >
                               <Check className="w-3 h-3 text-success" />
-                            </div>
+                            </motion.div>
                             <span className="text-sm text-foreground">{feature}</span>
                           </motion.div>
                         ))}
                       </div>
                     )}
                     
-                    <Button 
-                      variant={index === 0 ? "hero" : "outline"} 
-                      size="xl" 
-                      className="w-full" 
-                      asChild
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
-                      <Link to="/register">
-                        Bilow Hadda
-                      </Link>
-                    </Button>
+                      <Button 
+                        variant={index === 0 ? "hero" : "outline"} 
+                        size="xl" 
+                        className="w-full" 
+                        asChild
+                      >
+                        <Link to="/register">
+                          Bilow Hadda
+                        </Link>
+                      </Button>
+                    </motion.div>
                   </div>
                 </div>
               </motion.div>
