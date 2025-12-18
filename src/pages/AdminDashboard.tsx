@@ -8,6 +8,7 @@ import AdminOverview from "@/components/admin/AdminOverview";
 import AdminStudents from "@/components/admin/AdminStudents";
 import AdminCourses from "@/components/admin/AdminCourses";
 import AdminCourseAccess from "@/components/admin/AdminCourseAccess";
+import AdminPlaylistAccess from "@/components/admin/AdminPlaylistAccess";
 import AdminBookings from "@/components/admin/AdminBookings";
 import AdminStudentProgress from "@/components/admin/AdminStudentProgress";
 
@@ -70,6 +71,8 @@ const AdminDashboard = () => {
         return <AdminStudentProgress />;
       case "access":
         return <AdminCourseAccess />;
+      case "playlist-access":
+        return <AdminPlaylistAccess />;
       case "bookings":
         return <AdminBookings />;
       case "settings":

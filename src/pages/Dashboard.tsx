@@ -219,16 +219,18 @@ const Dashboard = () => {
           ].map((item, index) => (
             <motion.div
               key={item.title}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
+              transition={{ delay: index * 0.1, type: "spring", stiffness: 100 }}
+              whileHover={{ scale: 1.03, y: -5 }}
+              whileTap={{ scale: 0.98 }}
             >
               <Button
                 variant="outline"
-                className="w-full h-auto p-6 flex flex-col items-start gap-4 card-hover"
+                className="w-full h-auto p-6 flex flex-col items-start gap-4 card-hover-glow group"
                 onClick={() => navigate(item.href)}
               >
-                <div className={`w-12 h-12 ${item.color} rounded-xl flex items-center justify-center`}>
+                <div className={`w-12 h-12 ${item.color} rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`}>
                   <item.icon className="w-6 h-6" />
                 </div>
                 <div className="text-left">

@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Settings,
   TrendingUp,
+  ListMusic,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -30,6 +31,7 @@ const menuItems = [
   { id: "students", label: "Ardayda", icon: Users },
   { id: "progress", label: "Progress", icon: TrendingUp },
   { id: "access", label: "Course Access", icon: BookOpen },
+  { id: "playlist-access", label: "Playlist Access", icon: ListMusic },
   { id: "bookings", label: "Ballamaha", icon: Calendar },
   { id: "settings", label: "Settings", icon: Settings },
 ];
