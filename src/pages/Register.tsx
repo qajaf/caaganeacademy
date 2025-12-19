@@ -33,7 +33,20 @@ const registerSchema = z.object({
   whatsappNumber: z.string().min(6, "Please enter a valid WhatsApp number").max(20),
   country: z.string().min(2, "Please select your country").max(100),
   city: z.string().min(2, "Please enter your city").max(100),
+  referralSource: z.string().min(1, "Please tell us how you heard about us").max(200),
 });
+
+const referralSources = [
+  "Facebook",
+  "TikTok",
+  "YouTube",
+  "WhatsApp",
+  "Saaxiib (Friend)",
+  "Google Search",
+  "Instagram",
+  "Twitter/X",
+  "Xiriir kale (Other)",
+];
 
 const countries = [
   "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Argentina", "Armenia", "Australia",
@@ -72,6 +85,7 @@ const Register = () => {
     whatsappNumber: "",
     country: "",
     city: "",
+    referralSource: "",
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -122,6 +136,7 @@ const Register = () => {
             whatsapp_number: formData.whatsappNumber,
             country: formData.country,
             city: formData.city,
+            referral_source: formData.referralSource,
           })
           .eq("user_id", data.user.id);
 
@@ -337,6 +352,26 @@ const Register = () => {
                   required
                 />
               </div>
+            </div>
+
+            {/* Referral Source */}
+            <div className="space-y-2">
+              <Label htmlFor="referral">Xaggee kaad naga maqashay?</Label>
+              <Select
+                value={formData.referralSource}
+                onValueChange={(value) => handleChange("referralSource", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Dooro xaggaad naga maqashay..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {referralSources.map((source) => (
+                    <SelectItem key={source} value={source}>
+                      {source}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <Button

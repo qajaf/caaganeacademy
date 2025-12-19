@@ -11,6 +11,7 @@ import AdminCourseAccess from "@/components/admin/AdminCourseAccess";
 import AdminPlaylistAccess from "@/components/admin/AdminPlaylistAccess";
 import AdminBookings from "@/components/admin/AdminBookings";
 import AdminStudentProgress from "@/components/admin/AdminStudentProgress";
+import AdminNotifications from "@/components/admin/AdminNotifications";
 
 const AdminDashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -73,6 +74,8 @@ const AdminDashboard = () => {
         return <AdminCourseAccess />;
       case "playlist-access":
         return <AdminPlaylistAccess />;
+      case "notifications":
+        return <AdminNotifications />;
       case "bookings":
         return <AdminBookings />;
       case "settings":
