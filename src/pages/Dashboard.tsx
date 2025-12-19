@@ -11,11 +11,10 @@ import {
   Settings, 
   FileText, 
   LogOut,
-  Clock,
-  AlertCircle,
   Loader2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import NotificationCenter from "@/components/notifications/NotificationCenter";
 
 interface Profile {
   id: string;
@@ -104,68 +103,7 @@ const Dashboard = () => {
     return null;
   }
 
-  // Student not approved
-  if (!profile?.is_approved) {
-    return (
-      <div className="min-h-screen bg-background">
-        <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between h-16">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center">
-                  <GraduationCap className="w-6 h-6 text-primary-foreground" />
-                </div>
-                <span className="text-xl font-display font-bold">
-                  Learn<span className="text-secondary">English</span>
-                </span>
-              </div>
-              <Button variant="ghost" onClick={handleSignOut}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
-              </Button>
-            </div>
-          </div>
-        </nav>
-
-        <div className="container mx-auto px-4 py-16">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-xl mx-auto text-center"
-          >
-            <div className="w-20 h-20 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Clock className="w-10 h-10 text-accent" />
-            </div>
-            <h1 className="text-3xl font-display font-bold mb-4">
-              Account Pending Approval
-            </h1>
-            <p className="text-muted-foreground mb-8">
-              Welcome, <span className="font-semibold text-foreground">{profile?.full_name}</span>! 
-              Your account is being reviewed by our admin team. Once approved, you'll have 
-              full access to all courses and features.
-            </p>
-            
-            <div className="bg-card rounded-2xl p-6 border border-border">
-              <div className="flex items-start gap-4 text-left">
-                <AlertCircle className="w-6 h-6 text-accent flex-shrink-0 mt-1" />
-                <div>
-                  <h3 className="font-semibold mb-1">What happens next?</h3>
-                  <ul className="text-sm text-muted-foreground space-y-2">
-                    <li>• Our admin will review your registration</li>
-                    <li>• You'll receive access once approved</li>
-                    <li>• Subscription fee: $7/month</li>
-                    <li>• Contact WhatsApp: +252711983546</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </div>
-    );
-  }
-
-  // Approved student dashboard
+  // Approved student dashboard (all students are now auto-approved)
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
@@ -185,6 +123,7 @@ const Dashboard = () => {
               <span className="text-sm text-muted-foreground hidden md:block">
                 Welcome, {profile?.full_name?.split(" ")[0]}
               </span>
+              <NotificationCenter />
               <Button variant="ghost" onClick={handleSignOut}>
                 <LogOut className="w-4 h-4 mr-2" />
                 Sign Out
