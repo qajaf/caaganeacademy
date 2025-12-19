@@ -33,20 +33,9 @@ const registerSchema = z.object({
   whatsappNumber: z.string().min(6, "Please enter a valid WhatsApp number").max(20),
   country: z.string().min(2, "Please select your country").max(100),
   city: z.string().min(2, "Please enter your city").max(100),
-  referralSource: z.string().min(1, "Please tell us how you heard about us").max(200),
+  referralSource: z.string().min(2, "Please enter who referred you").max(200),
+  likesEnglish: z.string().min(1, "Please answer this question"),
 });
-
-const referralSources = [
-  "Facebook",
-  "TikTok",
-  "YouTube",
-  "WhatsApp",
-  "Saaxiib (Friend)",
-  "Google Search",
-  "Instagram",
-  "Twitter/X",
-  "Xiriir kale (Other)",
-];
 
 const countries = [
   "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Argentina", "Armenia", "Australia",
@@ -86,6 +75,7 @@ const Register = () => {
     country: "",
     city: "",
     referralSource: "",
+    likesEnglish: "",
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -137,6 +127,7 @@ const Register = () => {
             country: formData.country,
             city: formData.city,
             referral_source: formData.referralSource,
+            likes_english: formData.likesEnglish === "yes",
           })
           .eq("user_id", data.user.id);
 
@@ -354,22 +345,35 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Referral Source */}
+            {/* Referral Source - Text Input */}
             <div className="space-y-2">
-              <Label htmlFor="referral">Xaggee kaad naga maqashay?</Label>
+              <Label htmlFor="referral">Yaa kula soo wadaagay? (Qor magaciisa)</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  id="referral"
+                  placeholder="Magaca qofka kula soo wadaagay..."
+                  value={formData.referralSource}
+                  onChange={(e) => handleChange("referralSource", e.target.value)}
+                  className="pl-10"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Likes English */}
+            <div className="space-y-2">
+              <Label htmlFor="likesEnglish">Ma jeceshahay barashada Englishka?</Label>
               <Select
-                value={formData.referralSource}
-                onValueChange={(value) => handleChange("referralSource", value)}
+                value={formData.likesEnglish}
+                onValueChange={(value) => handleChange("likesEnglish", value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Dooro xaggaad naga maqashay..." />
+                  <SelectValue placeholder="Dooro jawaab..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {referralSources.map((source) => (
-                    <SelectItem key={source} value={source}>
-                      {source}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="yes">Haa, aad baan u jeclahay</SelectItem>
+                  <SelectItem value="no">Maya, laakiin waan rabaa inaan barto</SelectItem>
                 </SelectContent>
               </Select>
             </div>

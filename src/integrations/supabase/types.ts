@@ -324,6 +324,7 @@ export type Database = {
           is_approved: boolean | null
           language_level: Database["public"]["Enums"]["language_level"] | null
           learning_duration_months: number | null
+          likes_english: boolean | null
           referral_source: string | null
           subscription_end_date: string | null
           subscription_status:
@@ -344,6 +345,7 @@ export type Database = {
           is_approved?: boolean | null
           language_level?: Database["public"]["Enums"]["language_level"] | null
           learning_duration_months?: number | null
+          likes_english?: boolean | null
           referral_source?: string | null
           subscription_end_date?: string | null
           subscription_status?:
@@ -364,6 +366,7 @@ export type Database = {
           is_approved?: boolean | null
           language_level?: Database["public"]["Enums"]["language_level"] | null
           learning_duration_months?: number | null
+          likes_english?: boolean | null
           referral_source?: string | null
           subscription_end_date?: string | null
           subscription_status?:

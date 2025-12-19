@@ -19,6 +19,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Search,
   CheckCircle,
   XCircle,
@@ -30,6 +40,8 @@ import {
   Phone,
   MapPin,
   GraduationCap,
+  Trash2,
+  Heart,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +58,8 @@ interface Student {
   learning_duration_months: number | null;
   is_approved: boolean;
   subscription_status: string | null;
+  referral_source: string | null;
+  likes_english: boolean | null;
   created_at: string;
 }
 
@@ -55,6 +69,8 @@ const AdminStudents = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -109,6 +125,37 @@ const AdminStudents = () => {
       });
     } finally {
       setUpdating(null);
+    }
+  };
+
+  const handleDeleteStudent = async (student: Student) => {
+    setDeleting(student.id);
+    try {
+      // Delete profile (this will cascade and remove user data)
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("id", student.id);
+
+      if (profileError) throw profileError;
+
+      // Remove from local state
+      setStudents(students.filter((s) => s.id !== student.id));
+      setStudentToDelete(null);
+
+      toast({
+        title: "Arday la tirtiray",
+        description: `${student.full_name} waa la tirtiray.`,
+      });
+    } catch (error) {
+      console.error("Error deleting student:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete student",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -259,6 +306,18 @@ const AdminStudents = () => {
                           </>
                         )}
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setStudentToDelete(student)}
+                        disabled={deleting === student.id}
+                      >
+                        {deleting === student.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        )}
+                      </Button>
                     </div>
                   </TableCell>
                 </motion.tr>
@@ -318,6 +377,28 @@ const AdminStudents = () => {
                   </p>
                 </div>
               </div>
+              {selectedStudent.referral_source && (
+                <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                  <GraduationCap className="w-5 h-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Yaa kula soo wadaagay</p>
+                    <p className="font-medium">{selectedStudent.referral_source}</p>
+                  </div>
+                </div>
+              )}
+              <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                <Heart className="w-5 h-5 text-muted-foreground" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Ma jeceshahay English?</p>
+                  <p className="font-medium">
+                    {selectedStudent.likes_english === null 
+                      ? "N/A" 
+                      : selectedStudent.likes_english 
+                        ? "Haa" 
+                        : "Maya"}
+                  </p>
+                </div>
+              </div>
               <Button
                 className="w-full"
                 variant={selectedStudent.is_approved ? "destructive" : "default"}
@@ -332,6 +413,29 @@ const AdminStudents = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!studentToDelete} onOpenChange={() => setStudentToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ma hubtaa inaad tirtireyso?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ardaygan "{studentToDelete?.full_name}" waa la tirtiri doonaa. 
+              Tani waa mid aan laga noqon karin.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Ka noqo</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => studentToDelete && handleDeleteStudent(studentToDelete)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Haa, Tirtir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
