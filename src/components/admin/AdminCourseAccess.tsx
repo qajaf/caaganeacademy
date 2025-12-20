@@ -23,6 +23,7 @@ import {
   Loader2,
   Users,
   GraduationCap,
+  Trash2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -160,6 +161,23 @@ const AdminCourseAccess = () => {
     }
   };
 
+  const removeAccess = async (accessId: string) => {
+    if (!confirm("Ma hubtaa inaad ka saareyso fasaxan?")) return;
+    try {
+      const { error } = await supabase
+        .from("student_course_access")
+        .delete()
+        .eq("id", accessId);
+
+      if (error) throw error;
+      toast({ title: "Success", description: "Fasaxa waa la tirtiray" });
+      fetchCourseAccess(selectedCourse);
+    } catch (error) {
+      console.error("Error removing access:", error);
+      toast({ title: "Error", description: "Failed to remove access", variant: "destructive" });
+    }
+  };
+
   const grantAccessToStudent = async (userId: string) => {
     try {
       const { error } = await supabase
@@ -276,23 +294,32 @@ const AdminCourseAccess = () => {
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant={access.is_approved ? "destructive" : "default"}
-                            size="sm"
-                            onClick={() => toggleAccess(access.id, access.is_approved)}
-                          >
-                            {access.is_approved ? (
-                              <>
-                                <X className="w-4 h-4 mr-1" />
-                                Ka saar
-                              </>
-                            ) : (
-                              <>
-                                <Check className="w-4 h-4 mr-1" />
-                                Ogolow
-                              </>
-                            )}
-                          </Button>
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant={access.is_approved ? "destructive" : "default"}
+                              size="sm"
+                              onClick={() => toggleAccess(access.id, access.is_approved)}
+                            >
+                              {access.is_approved ? (
+                                <>
+                                  <X className="w-4 h-4 mr-1" />
+                                  Ka saar
+                                </>
+                              ) : (
+                                <>
+                                  <Check className="w-4 h-4 mr-1" />
+                                  Ogolow
+                                </>
+                              )}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeAccess(access.id)}
+                            >
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
