@@ -121,6 +121,39 @@ export type Database = {
         }
         Relationships: []
       }
+      dictionary: {
+        Row: {
+          created_at: string
+          example_sentence: string | null
+          example_sentence_meaning: string | null
+          id: string
+          meaning: string
+          pronunciation_url: string | null
+          updated_at: string
+          word: string
+        }
+        Insert: {
+          created_at?: string
+          example_sentence?: string | null
+          example_sentence_meaning?: string | null
+          id?: string
+          meaning: string
+          pronunciation_url?: string | null
+          updated_at?: string
+          word: string
+        }
+        Update: {
+          created_at?: string
+          example_sentence?: string | null
+          example_sentence_meaning?: string | null
+          id?: string
+          meaning?: string
+          pronunciation_url?: string | null
+          updated_at?: string
+          word?: string
+        }
+        Relationships: []
+      }
       lesson_notes: {
         Row: {
           content: string

@@ -23,6 +23,7 @@ import {
   Loader2,
   Users,
   ListMusic,
+  Trash2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -189,6 +190,23 @@ const AdminPlaylistAccess = () => {
         description: "Failed to update access",
         variant: "destructive",
       });
+    }
+  };
+
+  const removeAccess = async (accessId: string) => {
+    if (!confirm("Ma hubtaa inaad ka saareyso fasaxan?")) return;
+    try {
+      const { error } = await supabase
+        .from("student_playlist_access")
+        .delete()
+        .eq("id", accessId);
+
+      if (error) throw error;
+      toast({ title: "Success", description: "Fasaxa waa la tirtiray" });
+      fetchPlaylistAccess(selectedPlaylist);
+    } catch (error) {
+      console.error("Error removing access:", error);
+      toast({ title: "Error", description: "Failed to remove access", variant: "destructive" });
     }
   };
 
@@ -369,6 +387,13 @@ const AdminPlaylistAccess = () => {
                                   Ogolow
                                 </>
                               )}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeAccess(access.id)}
+                            >
+                              <Trash2 className="w-4 h-4 text-destructive" />
                             </Button>
                           </TableCell>
                         </motion.tr>
