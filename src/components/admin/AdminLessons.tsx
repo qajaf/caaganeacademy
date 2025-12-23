@@ -26,6 +26,9 @@ import {
   Clock,
   Upload,
   Link2,
+  Lock,
+  Unlock,
+  Calendar,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -44,12 +47,8 @@ interface Lesson {
   is_published: boolean;
   order_index: number;
   playlist_id: string;
-}
-
-interface LessonNote {
-  id: string;
-  content: string;
-  lesson_id: string;
+  is_locked: boolean | null;
+  unlock_date: string | null;
 }
 
 interface LessonResource {
@@ -73,8 +72,12 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [resourceDialogOpen, setResourceDialogOpen] = useState(false);
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
+  const [resourcesViewOpen, setResourcesViewOpen] = useState(false);
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
+  const [lessonResources, setLessonResources] = useState<LessonResource[]>([]);
+  const [editingResource, setEditingResource] = useState<LessonResource | null>(null);
+  const [videoInputType, setVideoInputType] = useState<"upload" | "url">("url");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -82,6 +85,8 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
     thumbnail_url: "",
     duration_minutes: 0,
     is_published: false,
+    is_locked: true,
+    unlock_date: "",
   });
   const [resourceForm, setResourceForm] = useState({
     title: "",
@@ -124,34 +129,47 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
     }
   };
 
+  const fetchLessonResources = async (lessonId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("lesson_resources")
+        .select("*")
+        .eq("lesson_id", lessonId);
+
+      if (error) throw error;
+      setLessonResources(data || []);
+    } catch (error) {
+      console.error("Error fetching resources:", error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
 
     try {
+      const lessonData = {
+        title: formData.title,
+        description: formData.description || null,
+        video_url: formData.video_url || null,
+        thumbnail_url: formData.thumbnail_url || null,
+        duration_minutes: formData.duration_minutes || 0,
+        is_published: formData.is_published,
+        is_locked: formData.is_locked,
+        unlock_date: formData.unlock_date ? new Date(formData.unlock_date).toISOString() : null,
+      };
+
       if (editingLesson) {
         const { error } = await supabase
           .from("lessons")
-          .update({
-            title: formData.title,
-            description: formData.description || null,
-            video_url: formData.video_url || null,
-            thumbnail_url: formData.thumbnail_url || null,
-            duration_minutes: formData.duration_minutes || 0,
-            is_published: formData.is_published,
-          })
+          .update(lessonData)
           .eq("id", editingLesson.id);
 
         if (error) throw error;
         toast({ title: "Success", description: "Lesson updated successfully" });
       } else {
         const { error } = await supabase.from("lessons").insert({
-          title: formData.title,
-          description: formData.description || null,
-          video_url: formData.video_url || null,
-          thumbnail_url: formData.thumbnail_url || null,
-          duration_minutes: formData.duration_minutes || 0,
-          is_published: formData.is_published,
+          ...lessonData,
           playlist_id: playlist.id,
           order_index: lessons.length,
         });
@@ -162,14 +180,7 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
 
       setDialogOpen(false);
       setEditingLesson(null);
-      setFormData({
-        title: "",
-        description: "",
-        video_url: "",
-        thumbnail_url: "",
-        duration_minutes: 0,
-        is_published: false,
-      });
+      resetForm();
       fetchLessons();
     } catch (error) {
       console.error("Error saving lesson:", error);
@@ -181,6 +192,19 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      description: "",
+      video_url: "",
+      thumbnail_url: "",
+      duration_minutes: 0,
+      is_published: false,
+      is_locked: true,
+      unlock_date: "",
+    });
   };
 
   const deleteLesson = async (id: string) => {
@@ -201,34 +225,109 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
     }
   };
 
+  const toggleLessonLock = async (lesson: Lesson) => {
+    try {
+      const { error } = await supabase
+        .from("lessons")
+        .update({ is_locked: !lesson.is_locked })
+        .eq("id", lesson.id);
+
+      if (error) throw error;
+      toast({
+        title: "Success",
+        description: lesson.is_locked ? "Lesson unlocked" : "Lesson locked",
+      });
+      fetchLessons();
+    } catch (error) {
+      console.error("Error toggling lock:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update lesson",
+        variant: "destructive",
+      });
+    }
+  };
+
   const addResource = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedLessonId) return;
     setSaving(true);
 
     try {
-      const { error } = await supabase.from("lesson_resources").insert({
-        title: resourceForm.title,
-        description: resourceForm.description || null,
-        file_url: resourceForm.file_url,
-        file_type: resourceForm.resource_type === "link" ? "link" : resourceForm.file_type,
-        lesson_id: selectedLessonId,
-      });
+      if (editingResource) {
+        const { error } = await supabase
+          .from("lesson_resources")
+          .update({
+            title: resourceForm.title,
+            description: resourceForm.description || null,
+            file_url: resourceForm.file_url,
+            file_type: resourceForm.resource_type === "link" ? "link" : resourceForm.file_type,
+          })
+          .eq("id", editingResource.id);
 
-      if (error) throw error;
-      toast({ title: "Success", description: "Resource added successfully" });
+        if (error) throw error;
+        toast({ title: "Success", description: "Resource updated successfully" });
+      } else {
+        const { error } = await supabase.from("lesson_resources").insert({
+          title: resourceForm.title,
+          description: resourceForm.description || null,
+          file_url: resourceForm.file_url,
+          file_type: resourceForm.resource_type === "link" ? "link" : resourceForm.file_type,
+          lesson_id: selectedLessonId,
+        });
+
+        if (error) throw error;
+        toast({ title: "Success", description: "Resource added successfully" });
+      }
+
       setResourceDialogOpen(false);
+      setEditingResource(null);
       setResourceForm({ title: "", description: "", file_url: "", file_type: "pdf", resource_type: "file" });
+      if (resourcesViewOpen) {
+        fetchLessonResources(selectedLessonId);
+      }
     } catch (error) {
-      console.error("Error adding resource:", error);
+      console.error("Error saving resource:", error);
       toast({
         title: "Error",
-        description: "Failed to add resource",
+        description: "Failed to save resource",
         variant: "destructive",
       });
     } finally {
       setSaving(false);
     }
+  };
+
+  const deleteResource = async (resourceId: string) => {
+    if (!confirm("Are you sure you want to delete this resource?")) return;
+
+    try {
+      const { error } = await supabase.from("lesson_resources").delete().eq("id", resourceId);
+      if (error) throw error;
+      toast({ title: "Success", description: "Resource deleted" });
+      if (selectedLessonId) {
+        fetchLessonResources(selectedLessonId);
+      }
+    } catch (error) {
+      console.error("Error deleting resource:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete resource",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const openEditResource = (resource: LessonResource) => {
+    setEditingResource(resource);
+    setResourceForm({
+      title: resource.title,
+      description: resource.description || "",
+      file_url: resource.file_url,
+      file_type: resource.file_type || "pdf",
+      resource_type: resource.file_type === "link" ? "link" : "file",
+    });
+    setResourceDialogOpen(true);
   };
 
   const addNote = async (e: React.FormEvent) => {
@@ -267,8 +366,17 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
       thumbnail_url: lesson.thumbnail_url || "",
       duration_minutes: lesson.duration_minutes || 0,
       is_published: lesson.is_published,
+      is_locked: lesson.is_locked ?? true,
+      unlock_date: lesson.unlock_date ? new Date(lesson.unlock_date).toISOString().slice(0, 16) : "",
     });
+    setVideoInputType(lesson.video_url?.startsWith("http") && !lesson.video_url?.includes("supabase") ? "url" : "upload");
     setDialogOpen(true);
+  };
+
+  const openResourcesView = async (lessonId: string) => {
+    setSelectedLessonId(lessonId);
+    await fetchLessonResources(lessonId);
+    setResourcesViewOpen(true);
   };
 
   if (loading) {
@@ -293,14 +401,7 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
           setDialogOpen(open);
           if (!open) {
             setEditingLesson(null);
-            setFormData({
-              title: "",
-              description: "",
-              video_url: "",
-              thumbnail_url: "",
-              duration_minutes: 0,
-              is_published: false,
-            });
+            resetForm();
           }
         }}>
           <DialogTrigger asChild>
@@ -309,7 +410,7 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
               Casharo Cusub
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingLesson ? "Wax ka Badal Casharka" : "Casharo Cusub"}</DialogTitle>
               <DialogDescription>
@@ -337,51 +438,89 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
                   rows={3}
                 />
               </div>
+
+              {/* Video Input Type Toggle */}
               <div>
-                <Label>Video File *</Label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="file"
-                    ref={videoInputRef}
-                    className="hidden"
-                    accept="video/*"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      setSaving(true);
-                      try {
-                        const fileName = `video-${Date.now()}.${file.name.split('.').pop()}`;
-                        const { error: uploadError } = await supabase.storage
-                          .from('course-files')
-                          .upload(fileName, file);
-                        if (uploadError) throw uploadError;
-                        const { data: urlData } = supabase.storage.from('course-files').getPublicUrl(fileName);
-                        setFormData({ ...formData, video_url: urlData.publicUrl });
-                        toast({ title: "Success", description: "Video uploaded" });
-                      } catch (error) {
-                        console.error(error);
-                        toast({ title: "Error", description: "Failed to upload video", variant: "destructive" });
-                      } finally {
-                        setSaving(false);
-                      }
-                    }}
-                  />
+                <Label>Video</Label>
+                <div className="flex gap-2 p-1 bg-muted rounded-lg mb-2">
+                  <button
+                    type="button"
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                      videoInputType === "url"
+                        ? "bg-background shadow text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    onClick={() => setVideoInputType("url")}
+                  >
+                    <Link2 className="w-4 h-4" />
+                    URL Link
+                  </button>
+                  <button
+                    type="button"
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                      videoInputType === "upload"
+                        ? "bg-background shadow text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    onClick={() => setVideoInputType("upload")}
+                  >
+                    <Upload className="w-4 h-4" />
+                    Upload
+                  </button>
+                </div>
+
+                {videoInputType === "url" ? (
                   <Input
                     value={formData.video_url}
-                    readOnly
-                    placeholder="Upload video file"
-                    className="flex-1"
+                    onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+                    placeholder="https://youtube.com/watch?v=... ama link kale"
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => videoInputRef.current?.click()}
-                    disabled={saving}
-                  >
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                  </Button>
-                </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="file"
+                      ref={videoInputRef}
+                      className="hidden"
+                      accept="video/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        setSaving(true);
+                        try {
+                          const fileName = `video-${Date.now()}.${file.name.split('.').pop()}`;
+                          const { error: uploadError } = await supabase.storage
+                            .from('course-files')
+                            .upload(fileName, file);
+                          if (uploadError) throw uploadError;
+                          const { data: urlData } = supabase.storage.from('course-files').getPublicUrl(fileName);
+                          setFormData({ ...formData, video_url: urlData.publicUrl });
+                          toast({ title: "Success", description: "Video uploaded" });
+                        } catch (error) {
+                          console.error(error);
+                          toast({ title: "Error", description: "Failed to upload video", variant: "destructive" });
+                        } finally {
+                          setSaving(false);
+                        }
+                      }}
+                    />
+                    <Input
+                      value={formData.video_url}
+                      readOnly
+                      placeholder="Upload video file"
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => videoInputRef.current?.click()}
+                      disabled={saving}
+                    >
+                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                )}
               </div>
+
               <div>
                 <Label>Sawirka (Thumbnail)</Label>
                 <div className="flex items-center gap-2">
@@ -427,6 +566,7 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
                   </Button>
                 </div>
               </div>
+
               <div>
                 <Label htmlFor="duration">Muddada (daqiiqo)</Label>
                 <Input
@@ -437,6 +577,41 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
                   placeholder="10"
                 />
               </div>
+
+              {/* Locking Controls */}
+              <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {formData.is_locked ? <Lock className="w-4 h-4 text-destructive" /> : <Unlock className="w-4 h-4 text-success" />}
+                    <Label htmlFor="lesson-locked">Casharka Xiran yahay</Label>
+                  </div>
+                  <Switch
+                    id="lesson-locked"
+                    checked={formData.is_locked}
+                    onCheckedChange={(checked) => setFormData({ ...formData, is_locked: checked })}
+                  />
+                </div>
+
+                {formData.is_locked && (
+                  <div>
+                    <Label htmlFor="unlock-date" className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4" />
+                      Xilliga Furitaanka (Auto-unlock)
+                    </Label>
+                    <Input
+                      id="unlock-date"
+                      type="datetime-local"
+                      value={formData.unlock_date}
+                      onChange={(e) => setFormData({ ...formData, unlock_date: e.target.value })}
+                      className="mt-1"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Hadii aad doorato taariikh, casharka wuu furmayaa markii la gaaro
+                    </p>
+                  </div>
+                )}
+              </div>
+
               <div className="flex items-center justify-between">
                 <Label htmlFor="lesson-published">La daabaco (Published)</Label>
                 <Switch
@@ -445,6 +620,7 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
                   onCheckedChange={(checked) => setFormData({ ...formData, is_published: checked })}
                 />
               </div>
+
               <Button type="submit" className="w-full" disabled={saving}>
                 {saving ? (
                   <>
@@ -508,6 +684,14 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
                   }`}>
                     {lesson.is_published ? "Published" : "Draft"}
                   </span>
+                  <span className={`px-2 py-0.5 text-xs rounded-full flex items-center gap-1 ${
+                    lesson.is_locked
+                      ? "bg-destructive/10 text-destructive"
+                      : "bg-success/10 text-success"
+                  }`}>
+                    {lesson.is_locked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
+                    {lesson.is_locked ? "Xiran" : "Furan"}
+                  </span>
                 </div>
                 <p className="text-sm text-muted-foreground line-clamp-1 mb-2">
                   {lesson.description || "No description"}
@@ -517,19 +701,30 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
                     <Clock className="w-4 h-4" />
                     {lesson.duration_minutes || 0} min
                   </span>
+                  {lesson.unlock_date && (
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-4 h-4" />
+                      {new Date(lesson.unlock_date).toLocaleDateString()}
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    setSelectedLessonId(lesson.id);
-                    setResourceDialogOpen(true);
-                  }}
+                  onClick={() => toggleLessonLock(lesson)}
+                  className={lesson.is_locked ? "text-destructive" : "text-success"}
+                >
+                  {lesson.is_locked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openResourcesView(lesson.id)}
                 >
                   <FileText className="w-4 h-4 mr-1" />
-                  Add Resource
+                  Resources
                 </Button>
                 <Button
                   variant="outline"
@@ -540,7 +735,7 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
                   }}
                 >
                   <FileText className="w-4 h-4 mr-1" />
-                  Add Note
+                  Note
                 </Button>
                 <Button
                   variant="ghost"
@@ -563,15 +758,87 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
         </div>
       )}
 
-      {/* Add Resource Dialog */}
-      <Dialog open={resourceDialogOpen} onOpenChange={setResourceDialogOpen}>
+      {/* Resources View Dialog */}
+      <Dialog open={resourcesViewOpen} onOpenChange={setResourcesViewOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Maamul Resources</DialogTitle>
+            <DialogDescription>Fiiri, wax ka badal, ama ka saar resources</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Button
+              onClick={() => {
+                setEditingResource(null);
+                setResourceForm({ title: "", description: "", file_url: "", file_type: "pdf", resource_type: "file" });
+                setResourceDialogOpen(true);
+              }}
+              className="gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Ku dar Resource Cusub
+            </Button>
+
+            {lessonResources.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">Ma jiraan resources</p>
+            ) : (
+              <div className="space-y-2">
+                {lessonResources.map((resource) => (
+                  <div
+                    key={resource.id}
+                    className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      {resource.file_type === "link" ? (
+                        <Link2 className="w-5 h-5 text-primary" />
+                      ) : (
+                        <FileText className="w-5 h-5 text-primary" />
+                      )}
+                      <div>
+                        <p className="font-medium">{resource.title}</p>
+                        <p className="text-sm text-muted-foreground truncate max-w-xs">
+                          {resource.description || resource.file_url}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEditResource(resource)}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteResource(resource.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add/Edit Resource Dialog */}
+      <Dialog open={resourceDialogOpen} onOpenChange={(open) => {
+        setResourceDialogOpen(open);
+        if (!open) {
+          setEditingResource(null);
+          setResourceForm({ title: "", description: "", file_url: "", file_type: "pdf", resource_type: "file" });
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Ku dar Resource</DialogTitle>
+            <DialogTitle>{editingResource ? "Wax ka Badal Resource" : "Ku dar Resource"}</DialogTitle>
             <DialogDescription>Ku dar PDF, file, ama link casharka</DialogDescription>
           </DialogHeader>
           <form onSubmit={addResource} className="space-y-4">
-            {/* Resource Type Toggle */}
             <div className="flex gap-2 p-1 bg-muted rounded-lg">
               <button
                 type="button"
@@ -680,7 +947,7 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
             )}
 
             <Button type="submit" className="w-full" disabled={saving}>
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Ku dar Resource"}
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : editingResource ? "Kaydi Isbedelka" : "Ku dar Resource"}
             </Button>
           </form>
         </DialogContent>
