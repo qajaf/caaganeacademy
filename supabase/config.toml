@@ -2,3 +2,6 @@ project_id = "ipqphteivimihwponlya"
 
 [functions.ai-tutor]
 verify_jwt = false
+
+[functions.admin-ai]
+verify_jwt = false

@@ -230,11 +230,13 @@ export type Database = {
           description: string | null
           duration_minutes: number | null
           id: string
+          is_locked: boolean | null
           is_published: boolean | null
           order_index: number | null
           playlist_id: string
           thumbnail_url: string | null
           title: string
+          unlock_date: string | null
           updated_at: string
           video_url: string | null
         }
@@ -243,11 +245,13 @@ export type Database = {
           description?: string | null
           duration_minutes?: number | null
           id?: string
+          is_locked?: boolean | null
           is_published?: boolean | null
           order_index?: number | null
           playlist_id: string
           thumbnail_url?: string | null
           title: string
+          unlock_date?: string | null
           updated_at?: string
           video_url?: string | null
         }
@@ -256,11 +260,13 @@ export type Database = {
           description?: string | null
           duration_minutes?: number | null
           id?: string
+          is_locked?: boolean | null
           is_published?: boolean | null
           order_index?: number | null
           playlist_id?: string
           thumbnail_url?: string | null
           title?: string
+          unlock_date?: string | null
           updated_at?: string
           video_url?: string | null
         }

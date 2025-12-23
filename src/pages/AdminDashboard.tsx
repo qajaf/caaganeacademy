@@ -14,6 +14,7 @@ import AdminStudentProgress from "@/components/admin/AdminStudentProgress";
 import AdminNotifications from "@/components/admin/AdminNotifications";
 import AdminDictionary from "@/components/admin/AdminDictionary";
 import AdminRoles from "@/components/admin/AdminRoles";
+import AdminAIAssistant from "@/components/admin/AdminAIAssistant";
 
 const AdminDashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -99,6 +100,7 @@ const AdminDashboard = () => {
   return (
     <AdminLayout activeTab={activeTab} onTabChange={setActiveTab}>
       {renderContent()}
+      <AdminAIAssistant />
     </AdminLayout>
   );
 };
