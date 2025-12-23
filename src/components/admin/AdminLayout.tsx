@@ -33,7 +33,6 @@ const menuItems = [
   { id: "progress", label: "Progress", icon: TrendingUp },
   { id: "access", label: "Course Access", icon: BookOpen },
   { id: "playlist-access", label: "Playlist Access", icon: ListMusic },
-  { id: "dictionary", label: "Dictionary", icon: BookOpen },
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "roles", label: "Admin Roles", icon: Settings },
   { id: "bookings", label: "Ballamaha", icon: Calendar },
