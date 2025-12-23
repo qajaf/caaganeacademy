@@ -12,7 +12,6 @@ import AdminPlaylistAccess from "@/components/admin/AdminPlaylistAccess";
 import AdminBookings from "@/components/admin/AdminBookings";
 import AdminStudentProgress from "@/components/admin/AdminStudentProgress";
 import AdminNotifications from "@/components/admin/AdminNotifications";
-import AdminDictionary from "@/components/admin/AdminDictionary";
 import AdminRoles from "@/components/admin/AdminRoles";
 import AdminAIAssistant from "@/components/admin/AdminAIAssistant";
 
@@ -77,8 +76,6 @@ const AdminDashboard = () => {
         return <AdminCourseAccess />;
       case "playlist-access":
         return <AdminPlaylistAccess />;
-      case "dictionary":
-        return <AdminDictionary />;
       case "roles":
         return <AdminRoles />;
       case "notifications":

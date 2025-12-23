@@ -470,11 +470,44 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
                 </div>
 
                 {videoInputType === "url" ? (
-                  <Input
-                    value={formData.video_url}
-                    onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
-                    placeholder="https://youtube.com/watch?v=... ama link kale"
-                  />
+                  <div className="space-y-3">
+                    <Input
+                      value={formData.video_url}
+                      onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+                      placeholder="https://youtube.com/watch?v=... ama link kale"
+                    />
+                    {/* Video Preview for Admin */}
+                    {formData.video_url && (
+                      <div className="rounded-lg overflow-hidden border border-border">
+                        <div className="bg-muted px-3 py-2 text-sm font-medium flex items-center gap-2">
+                          <Play className="w-4 h-4" />
+                          Video Preview
+                        </div>
+                        <div className="aspect-video bg-black">
+                          {formData.video_url.includes("youtube.com") || formData.video_url.includes("youtu.be") ? (
+                            <iframe
+                              src={(() => {
+                                const url = formData.video_url;
+                                const videoId = url.includes("youtu.be")
+                                  ? url.split("/").pop()?.split("?")[0]
+                                  : url.split("v=")[1]?.split("&")[0];
+                                return `https://www.youtube.com/embed/${videoId}`;
+                              })()}
+                              className="w-full h-full"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                            />
+                          ) : (
+                            <video
+                              src={formData.video_url}
+                              controls
+                              className="w-full h-full"
+                            />
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <div className="flex items-center gap-2">
                     <input
