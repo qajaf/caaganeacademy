@@ -24,6 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import ThemeToggle from "@/components/ThemeToggle";
 import FloatingContact from "@/components/layout/FloatingContact";
 import StudentChatbot from "@/components/chat/StudentChatbot";
+import SecureVideoPlayer from "@/components/video/SecureVideoPlayer";
 import caaganelogo from "@/assets/caagane-academy-logo.jpg";
 
 interface Profile {
@@ -450,47 +451,14 @@ const Courses = () => {
 
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
-            {/* Video Player with enhanced animations */}
+            {/* Secure Video Player - No download, no link copy */}
             {selectedLesson.video_url && (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="relative aspect-video bg-black rounded-2xl overflow-hidden mb-6 shadow-2xl"
-              >
-                {/* Decorative corner animations */}
-                <motion.div
-                  className="absolute top-0 left-0 w-20 h-20 border-t-4 border-l-4 border-primary/50 rounded-tl-2xl"
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.3, duration: 0.5 }}
+              <div className="mb-6">
+                <SecureVideoPlayer 
+                  videoUrl={selectedLesson.video_url}
+                  title={selectedLesson.title}
                 />
-                <motion.div
-                  className="absolute top-0 right-0 w-20 h-20 border-t-4 border-r-4 border-secondary/50 rounded-tr-2xl"
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.4, duration: 0.5 }}
-                />
-                <motion.div
-                  className="absolute bottom-0 left-0 w-20 h-20 border-b-4 border-l-4 border-secondary/50 rounded-bl-2xl"
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.5, duration: 0.5 }}
-                />
-                <motion.div
-                  className="absolute bottom-0 right-0 w-20 h-20 border-b-4 border-r-4 border-primary/50 rounded-br-2xl"
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.6, duration: 0.5 }}
-                />
-                
-                <iframe
-                  src={getVideoEmbed(selectedLesson.video_url)}
-                  className="w-full h-full relative z-10"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </motion.div>
+              </div>
             )}
 
             <motion.div
