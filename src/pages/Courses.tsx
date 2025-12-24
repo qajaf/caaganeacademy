@@ -23,6 +23,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import ThemeToggle from "@/components/ThemeToggle";
 import FloatingContact from "@/components/layout/FloatingContact";
+import StudentChatbot from "@/components/chat/StudentChatbot";
 import caaganelogo from "@/assets/caagane-academy-logo.jpg";
 
 interface Profile {
@@ -954,6 +955,7 @@ const Courses = () => {
         )}
       </div>
       <FloatingContact />
+      <StudentChatbot />
     </div>
   );
 };

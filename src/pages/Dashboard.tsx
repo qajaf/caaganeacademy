@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import NotificationCenter from "@/components/notifications/NotificationCenter";
 import ThemeToggle from "@/components/ThemeToggle";
 import FloatingContact from "@/components/layout/FloatingContact";
+import StudentChatbot from "@/components/chat/StudentChatbot";
 
 interface Profile {
   id: string;
@@ -202,6 +203,7 @@ const Dashboard = () => {
         </motion.div>
       </div>
       <FloatingContact />
+      <StudentChatbot />
     </div>
   );
 };
