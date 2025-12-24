@@ -79,6 +79,45 @@ export type Database = {
           },
         ]
       }
+      chatbot_messages: {
+        Row: {
+          admin_response: string | null
+          created_at: string
+          escalation_reason: string | null
+          id: string
+          is_escalated: boolean | null
+          is_resolved: boolean | null
+          message: string
+          response: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_response?: string | null
+          created_at?: string
+          escalation_reason?: string | null
+          id?: string
+          is_escalated?: boolean | null
+          is_resolved?: boolean | null
+          message: string
+          response?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_response?: string | null
+          created_at?: string
+          escalation_reason?: string | null
+          id?: string
+          is_escalated?: boolean | null
+          is_resolved?: boolean | null
+          message?: string
+          response?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       courses: {
         Row: {
           created_at: string

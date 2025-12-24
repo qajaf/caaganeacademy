@@ -17,6 +17,7 @@ import {
   TrendingUp,
   ListMusic,
   Bell,
+  MessageSquare,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -33,6 +34,7 @@ const menuItems = [
   { id: "progress", label: "Progress", icon: TrendingUp },
   { id: "access", label: "Course Access", icon: BookOpen },
   { id: "playlist-access", label: "Playlist Access", icon: ListMusic },
+  { id: "escalations", label: "Chatbot Q&A", icon: MessageSquare },
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "roles", label: "Admin Roles", icon: Settings },
   { id: "bookings", label: "Ballamaha", icon: Calendar },

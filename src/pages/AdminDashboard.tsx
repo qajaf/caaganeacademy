@@ -14,6 +14,7 @@ import AdminStudentProgress from "@/components/admin/AdminStudentProgress";
 import AdminNotifications from "@/components/admin/AdminNotifications";
 import AdminRoles from "@/components/admin/AdminRoles";
 import AdminAIAssistant from "@/components/admin/AdminAIAssistant";
+import AdminEscalations from "@/components/admin/AdminEscalations";
 
 const AdminDashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -76,6 +77,8 @@ const AdminDashboard = () => {
         return <AdminCourseAccess />;
       case "playlist-access":
         return <AdminPlaylistAccess />;
+      case "escalations":
+        return <AdminEscalations />;
       case "roles":
         return <AdminRoles />;
       case "notifications":
