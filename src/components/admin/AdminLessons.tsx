@@ -84,8 +84,8 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
     video_url: "",
     thumbnail_url: "",
     duration_minutes: 0,
-    is_published: false,
-    is_locked: true,
+    is_published: true,
+    is_locked: false,
     unlock_date: "",
   });
   const [resourceForm, setResourceForm] = useState({
@@ -201,8 +201,8 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
       video_url: "",
       thumbnail_url: "",
       duration_minutes: 0,
-      is_published: false,
-      is_locked: true,
+      is_published: true,
+      is_locked: false,
       unlock_date: "",
     });
   };

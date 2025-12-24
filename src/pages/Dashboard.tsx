@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import NotificationCenter from "@/components/notifications/NotificationCenter";
+import ThemeToggle from "@/components/ThemeToggle";
+import FloatingContact from "@/components/layout/FloatingContact";
 
 interface Profile {
   id: string;
@@ -124,6 +126,7 @@ const Dashboard = () => {
                 Welcome, {profile?.full_name?.split(" ")[0]}
               </span>
               <NotificationCenter />
+              <ThemeToggle />
               <Button variant="ghost" onClick={handleSignOut}>
                 <LogOut className="w-4 h-4 mr-2" />
                 Sign Out
@@ -198,6 +201,7 @@ const Dashboard = () => {
           </Button>
         </motion.div>
       </div>
+      <FloatingContact />
     </div>
   );
 };
