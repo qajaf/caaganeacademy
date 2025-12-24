@@ -18,9 +18,11 @@ import {
   LogOut,
   CheckCircle,
   Circle,
+  MessageCircle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ThemeToggle from "@/components/ThemeToggle";
+import FloatingContact from "@/components/layout/FloatingContact";
 import caaganelogo from "@/assets/caagane-academy-logo.jpg";
 
 interface Profile {
@@ -52,6 +54,10 @@ interface Playlist {
   description: string | null;
   thumbnail_url: string | null;
   is_published: boolean;
+}
+
+interface PlaylistWithCount extends Playlist {
+  lesson_count: number;
 }
 
 interface Lesson {
@@ -93,7 +99,7 @@ const Courses = () => {
   const [playlistAccess, setPlaylistAccess] = useState<PlaylistAccess[]>([]);
   const [lessonProgress, setLessonProgress] = useState<LessonProgress[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [playlists, setPlaylists] = useState<PlaylistWithCount[]>([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
@@ -195,7 +201,8 @@ const Courses = () => {
   const fetchPlaylists = async (courseId: string) => {
     setLoadingPlaylists(true);
     try {
-      const { data, error } = await supabase
+      // Fetch playlists
+      const { data: playlistsData, error } = await supabase
         .from("playlists")
         .select("*")
         .eq("course_id", courseId)
@@ -203,7 +210,24 @@ const Courses = () => {
         .order("order_index", { ascending: true });
 
       if (error) throw error;
-      setPlaylists(data || []);
+
+      // Fetch lesson counts for each playlist
+      const playlistsWithCounts: PlaylistWithCount[] = await Promise.all(
+        (playlistsData || []).map(async (playlist) => {
+          const { count } = await supabase
+            .from("lessons")
+            .select("*", { count: "exact", head: true })
+            .eq("playlist_id", playlist.id)
+            .eq("is_published", true);
+          
+          return {
+            ...playlist,
+            lesson_count: count || 0,
+          };
+        })
+      );
+
+      setPlaylists(playlistsWithCounts);
     } catch (error) {
       console.error("Error fetching playlists:", error);
     } finally {
@@ -314,7 +338,7 @@ const Courses = () => {
     fetchPlaylists(course.id);
   };
 
-  const handlePlaylistClick = (playlist: Playlist) => {
+  const handlePlaylistClick = (playlist: PlaylistWithCount) => {
     if (!selectedCourse) return;
     
     // Check both course and playlist access
@@ -367,6 +391,20 @@ const Courses = () => {
     navigate("/");
   };
 
+  const handleBack = () => {
+    if (selectedLesson) {
+      setSelectedLesson(null);
+    } else if (selectedPlaylist) {
+      setSelectedPlaylist(null);
+      setLessons([]);
+    } else if (selectedCourse) {
+      setSelectedCourse(null);
+      setPlaylists([]);
+    } else {
+      navigate(-1);
+    }
+  };
+
   const getVideoEmbed = (url: string) => {
     if (url.includes("youtube.com") || url.includes("youtu.be")) {
       const videoId = url.includes("youtu.be")
@@ -389,7 +427,7 @@ const Courses = () => {
   const currentPlaylistHasAccess = selectedPlaylist ? hasPlaylistAccess(selectedPlaylist.id) : false;
   const hasFullAccess = currentCourseHasAccess && currentPlaylistHasAccess;
 
-  // Lesson View
+  // Lesson View with enhanced animations
   if (selectedLesson && hasFullAccess) {
     const currentLessonIndex = lessons.findIndex(l => l.id === selectedLesson.id);
     const isCurrentLessonCompleted = isLessonCompleted(selectedLesson.id);
@@ -400,7 +438,7 @@ const Courses = () => {
         <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between h-16">
-              <Button variant="ghost" onClick={() => setSelectedLesson(null)}>
+              <Button variant="ghost" onClick={handleBack}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Casharada
               </Button>
@@ -411,17 +449,43 @@ const Courses = () => {
 
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
-            {/* Video Player */}
+            {/* Video Player with enhanced animations */}
             {selectedLesson.video_url && (
               <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-                className="aspect-video bg-black rounded-2xl overflow-hidden mb-6 shadow-xl"
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                className="relative aspect-video bg-black rounded-2xl overflow-hidden mb-6 shadow-2xl"
               >
+                {/* Decorative corner animations */}
+                <motion.div
+                  className="absolute top-0 left-0 w-20 h-20 border-t-4 border-l-4 border-primary/50 rounded-tl-2xl"
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3, duration: 0.5 }}
+                />
+                <motion.div
+                  className="absolute top-0 right-0 w-20 h-20 border-t-4 border-r-4 border-secondary/50 rounded-tr-2xl"
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.4, duration: 0.5 }}
+                />
+                <motion.div
+                  className="absolute bottom-0 left-0 w-20 h-20 border-b-4 border-l-4 border-secondary/50 rounded-bl-2xl"
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.5, duration: 0.5 }}
+                />
+                <motion.div
+                  className="absolute bottom-0 right-0 w-20 h-20 border-b-4 border-r-4 border-primary/50 rounded-br-2xl"
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.6, duration: 0.5 }}
+                />
+                
                 <iframe
                   src={getVideoEmbed(selectedLesson.video_url)}
-                  className="w-full h-full"
+                  className="w-full h-full relative z-10"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                 />
@@ -431,7 +495,7 @@ const Courses = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
+              transition={{ delay: 0.2 }}
             >
               <h1 className="text-2xl font-display font-bold mb-2">{selectedLesson.title}</h1>
               {selectedLesson.description && (
@@ -443,11 +507,15 @@ const Courses = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
+              transition={{ delay: 0.3 }}
               className="mb-6"
             >
               {isCurrentLessonCompleted ? (
-                <div className="flex items-center gap-3 p-4 bg-success/10 border border-success/30 rounded-xl">
+                <motion.div 
+                  initial={{ scale: 0.95 }}
+                  animate={{ scale: 1 }}
+                  className="flex items-center gap-3 p-4 bg-success/10 border border-success/30 rounded-xl"
+                >
                   <CheckCircle className="w-6 h-6 text-success" />
                   <div className="flex-1">
                     <p className="font-semibold text-success">Casharka waa la dhamaystay!</p>
@@ -466,7 +534,7 @@ const Courses = () => {
                       <ChevronRight className="w-4 h-4" />
                     </Button>
                   )}
-                </div>
+                </motion.div>
               ) : (
                 <Button 
                   onClick={markLessonComplete}
@@ -489,7 +557,7 @@ const Courses = () => {
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
+                transition={{ delay: 0.4 }}
                 className="mb-6"
               >
                 <h3 className="font-semibold mb-3">PDF & Resources</h3>
@@ -499,7 +567,7 @@ const Courses = () => {
                       key={resource.id}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.3 + index * 0.1 }}
+                      transition={{ delay: 0.5 + index * 0.1 }}
                       onClick={async () => {
                         try {
                           const response = await fetch(resource.file_url);
@@ -518,7 +586,6 @@ const Courses = () => {
                           });
                         } catch (error) {
                           console.error('Download error:', error);
-                          // Fallback: open in new tab
                           window.open(resource.file_url, '_blank');
                         }
                       }}
@@ -551,7 +618,7 @@ const Courses = () => {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
+                transition={{ delay: 0.6 }}
               >
                 <h3 className="font-semibold mb-3">Qoraalada Casharka</h3>
                 <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
@@ -560,7 +627,7 @@ const Courses = () => {
                       key={note.id} 
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ delay: 0.5 + index * 0.1 }}
+                      transition={{ delay: 0.7 + index * 0.1 }}
                       className="prose prose-sm dark:prose-invert max-w-none"
                     >
                       <p className="whitespace-pre-wrap">{note.content}</p>
@@ -571,6 +638,7 @@ const Courses = () => {
             )}
           </div>
         </div>
+        <FloatingContact />
       </div>
     );
   }
@@ -582,7 +650,7 @@ const Courses = () => {
         <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between h-16">
-              <Button variant="ghost" onClick={() => { setSelectedPlaylist(null); setLessons([]); }}>
+              <Button variant="ghost" onClick={handleBack}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 {selectedCourse.title}
               </Button>
@@ -699,18 +767,19 @@ const Courses = () => {
             </div>
           )}
         </div>
+        <FloatingContact />
       </div>
     );
   }
 
-  // Playlists View (within a course)
+  // Playlists View (within a course) - Now shows lesson count
   if (selectedCourse) {
     return (
       <div className="min-h-screen bg-background">
         <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between h-16">
-              <Button variant="ghost" onClick={() => { setSelectedCourse(null); setPlaylists([]); }}>
+              <Button variant="ghost" onClick={handleBack}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Courses
               </Button>
@@ -787,9 +856,14 @@ const Courses = () => {
                     </div>
                     <div className="p-4">
                       <h3 className="font-semibold text-lg mb-1">{playlist.title}</h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                         {playlist.description || "Casharo cusub"}
                       </p>
+                      {/* Lesson count display */}
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Play className="w-4 h-4" />
+                        <span>{playlist.lesson_count} cashar</span>
+                      </div>
                       {!hasAccess && (
                         <div className="flex items-center gap-1 mt-2 text-destructive text-sm">
                           <Lock className="w-4 h-4" />
@@ -803,6 +877,7 @@ const Courses = () => {
             </div>
           )}
         </div>
+        <FloatingContact />
       </div>
     );
   }
@@ -870,20 +945,15 @@ const Courses = () => {
                 <div className="p-4">
                   <h3 className="font-semibold text-lg mb-1">{course.title}</h3>
                   <p className="text-sm text-muted-foreground line-clamp-2">
-                    {course.description || "Course cusub"}
+                    {course.description || "Baro Ingiriis si fudud"}
                   </p>
-                  {!hasCourseAccess(course.id) && (
-                    <div className="flex items-center gap-1 mt-2 text-destructive text-sm">
-                      <Lock className="w-4 h-4" />
-                      <span>Xiran - La xiriir +252711983546</span>
-                    </div>
-                  )}
                 </div>
               </motion.div>
             ))}
           </div>
         )}
       </div>
+      <FloatingContact />
     </div>
   );
 };
