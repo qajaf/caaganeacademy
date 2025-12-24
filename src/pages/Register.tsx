@@ -139,12 +139,13 @@ const Register = () => {
       setSuccess(true);
       toast({
         title: "Waad ku guuleysatay!",
-        description: "Akoonkaaga waa la sameeyay. Fadlan sug ansixinta.",
+        description: "Akoonkaaga waa la sameeyay. Toos ayaa laguu geeynayaa casharadaada.",
       });
 
+      // Redirect directly to courses after successful registration
       setTimeout(() => {
-        navigate("/auth");
-      }, 3000);
+        navigate("/courses");
+      }, 1500);
 
     } catch (error: unknown) {
       const err = error as { message?: string };
@@ -175,11 +176,12 @@ const Register = () => {
           </div>
           <h1 className="text-3xl font-display font-bold mb-4">Waad ku guuleysatay!</h1>
           <p className="text-muted-foreground mb-6">
-            Akoonkaaga waa la sameeyay. Fadlan sug ansixinta admin-ka 
-            si aad u hesho casharada. Waad ku soo dhawowdahay Caagane Academy!
+            Akoonkaaga waa la sameeyay. Hadda waxaa laguu geynayaa casharadaada. 
+            Waad ku soo dhawowdahay Caagane Academy!
           </p>
           <p className="text-sm text-muted-foreground">
-            Dib ugu noqosho bogga login-ka...
+            <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
+            Casharada ayaa soo furanayaan...
           </p>
         </motion.div>
       </div>
