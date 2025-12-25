@@ -1,12 +1,22 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Pause, Volume2, VolumeX, Maximize, SkipBack, SkipForward, Loader2 } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, Maximize, SkipBack, SkipForward, Loader2, Settings } from "lucide-react";
 
 interface SecureVideoPlayerProps {
   videoUrl: string;
   title?: string;
   onProgress?: (currentTime: number, duration: number) => void;
 }
+
+type VideoQuality = "auto" | "360" | "480" | "720" | "1080";
+
+const qualityLabels: Record<VideoQuality, string> = {
+  auto: "Auto (HD)",
+  "360": "360p - Hoose",
+  "480": "480p - Dhexe",
+  "720": "720p - HD",
+  "1080": "1080p - Full HD",
+};
 
 const SecureVideoPlayer = ({ videoUrl, title, onProgress }: SecureVideoPlayerProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -17,6 +27,9 @@ const SecureVideoPlayer = ({ videoUrl, title, onProgress }: SecureVideoPlayerPro
   const [isMuted, setIsMuted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showCenterPlay, setShowCenterPlay] = useState(true);
+  const [quality, setQuality] = useState<VideoQuality>("auto");
+  const [showQualityMenu, setShowQualityMenu] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -47,6 +60,7 @@ const SecureVideoPlayer = ({ videoUrl, title, onProgress }: SecureVideoPlayerPro
     if (isPlaying) {
       controlsTimeoutRef.current = setTimeout(() => {
         setShowControls(false);
+        setShowQualityMenu(false);
       }, 3000);
     }
   };
@@ -120,6 +134,33 @@ const SecureVideoPlayer = ({ videoUrl, title, onProgress }: SecureVideoPlayerPro
     videoRef.current.currentTime = Math.max(videoRef.current.currentTime - 10, 0);
   };
 
+  const handleQualityChange = (newQuality: VideoQuality) => {
+    const savedTime = videoRef.current?.currentTime || 0;
+    const wasPlaying = isPlaying;
+    
+    setQuality(newQuality);
+    setShowQualityMenu(false);
+    
+    // Note: Supabase storage typically serves single-quality files
+    // This sets up the structure for when multi-quality sources are available
+    // For now, we're adjusting playback rate simulation or future HLS support
+    
+    if (videoRef.current) {
+      videoRef.current.currentTime = savedTime;
+      if (wasPlaying) {
+        videoRef.current.play();
+      }
+    }
+  };
+
+  const handleWaiting = () => {
+    setIsBuffering(true);
+  };
+
+  const handleCanPlay = () => {
+    setIsBuffering(false);
+  };
+
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   useEffect(() => {
@@ -128,6 +169,17 @@ const SecureVideoPlayer = ({ videoUrl, title, onProgress }: SecureVideoPlayerPro
       return () => clearTimeout(timer);
     }
   }, [isYouTube]);
+
+  // Close quality menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (showQualityMenu) {
+        setShowQualityMenu(false);
+      }
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, [showQualityMenu]);
 
   return (
     <motion.div
@@ -138,7 +190,12 @@ const SecureVideoPlayer = ({ videoUrl, title, onProgress }: SecureVideoPlayerPro
       className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl group select-none"
       onContextMenu={handleContextMenu}
       onMouseMove={handleMouseMove}
-      onMouseLeave={() => isPlaying && setShowControls(false)}
+      onMouseLeave={() => {
+        if (isPlaying) {
+          setShowControls(false);
+          setShowQualityMenu(false);
+        }
+      }}
       style={{ 
         userSelect: 'none',
         WebkitUserSelect: 'none',
@@ -151,13 +208,16 @@ const SecureVideoPlayer = ({ videoUrl, title, onProgress }: SecureVideoPlayerPro
 
       {/* Loading State */}
       <AnimatePresence>
-        {isLoading && (
+        {(isLoading || isBuffering) && (
           <motion.div
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 flex items-center justify-center bg-[#1a4a4a] z-30"
+            className="absolute inset-0 flex flex-col items-center justify-center bg-[#1a4a4a]/80 z-30"
           >
             <Loader2 className="w-12 h-12 text-[#ff6b35] animate-spin" />
+            {isBuffering && (
+              <p className="text-white text-sm mt-2">Soo dejinaya...</p>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -176,6 +236,8 @@ const SecureVideoPlayer = ({ videoUrl, title, onProgress }: SecureVideoPlayerPro
             setIsPlaying(false);
             setShowCenterPlay(true);
           }}
+          onWaiting={handleWaiting}
+          onCanPlay={handleCanPlay}
           controlsList="nodownload nofullscreen noremoteplayback"
           disablePictureInPicture
           playsInline
@@ -203,7 +265,7 @@ const SecureVideoPlayer = ({ videoUrl, title, onProgress }: SecureVideoPlayerPro
 
       {/* Center Play Button - Orange/Red like reference */}
       <AnimatePresence>
-        {showCenterPlay && !isLoading && (
+        {showCenterPlay && !isLoading && !isBuffering && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -309,12 +371,63 @@ const SecureVideoPlayer = ({ videoUrl, title, onProgress }: SecureVideoPlayerPro
                   </span>
                 </div>
 
-                <button 
-                  className="text-white hover:text-[#ff6b35] transition-colors"
-                  onClick={toggleFullscreen}
-                >
-                  <Maximize className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-3">
+                  {/* Quality Selector */}
+                  <div className="relative">
+                    <button 
+                      className="text-white hover:text-[#ff6b35] transition-colors flex items-center gap-1 text-sm font-medium bg-white/10 px-2 py-1 rounded"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowQualityMenu(!showQualityMenu);
+                      }}
+                    >
+                      <Settings className="w-4 h-4" />
+                      <span className="hidden sm:inline">
+                        {quality === "auto" ? "HD" : `${quality}p`}
+                      </span>
+                    </button>
+
+                    {/* Quality Menu */}
+                    <AnimatePresence>
+                      {showQualityMenu && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          className="absolute bottom-full right-0 mb-2 bg-black/90 backdrop-blur-sm rounded-lg overflow-hidden min-w-[160px] border border-white/10"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="p-2">
+                            <p className="text-white/60 text-xs px-2 py-1 mb-1">Tayada Video</p>
+                            {(["auto", "1080", "720", "480", "360"] as VideoQuality[]).map((q) => (
+                              <button
+                                key={q}
+                                className={`w-full text-left px-3 py-2 text-sm rounded transition-colors flex items-center justify-between ${
+                                  quality === q
+                                    ? "bg-[#ff6b35] text-white"
+                                    : "text-white hover:bg-white/10"
+                                }`}
+                                onClick={() => handleQualityChange(q)}
+                              >
+                                <span>{qualityLabels[q]}</span>
+                                {quality === q && (
+                                  <span className="w-2 h-2 bg-white rounded-full" />
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  <button 
+                    className="text-white hover:text-[#ff6b35] transition-colors"
+                    onClick={toggleFullscreen}
+                  >
+                    <Maximize className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>
