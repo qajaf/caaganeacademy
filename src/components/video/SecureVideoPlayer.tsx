@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Pause, Volume2, VolumeX, Maximize, SkipBack, SkipForward, Loader2, Settings } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, Maximize, SkipBack, SkipForward, Loader2 } from "lucide-react";
 
 interface SecureVideoPlayerProps {
   videoUrl: string;
@@ -8,37 +8,20 @@ interface SecureVideoPlayerProps {
   onProgress?: (currentTime: number, duration: number) => void;
 }
 
-type VideoQuality = "auto" | "360" | "480" | "720" | "1080";
-
-const qualityLabels: Record<VideoQuality, string> = {
-  auto: "Auto (HD)",
-  "360": "360p - Hoose",
-  "480": "480p - Dhexe",
-  "720": "720p - HD",
-  "1080": "1080p - Full HD",
-};
-
 const SecureVideoPlayer = ({ videoUrl, title, onProgress }: SecureVideoPlayerProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showCenterPlay, setShowCenterPlay] = useState(true);
-  const [quality, setQuality] = useState<VideoQuality>("auto");
-  const [showQualityMenu, setShowQualityMenu] = useState(false);
-  const [isBuffering, setIsBuffering] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check if YouTube video
   const isYouTube = videoUrl.includes("youtube.com") || videoUrl.includes("youtu.be");
-  
-  // Check if Supabase storage video
-  const isSupabaseVideo = videoUrl.includes("supabase.co/storage");
 
   const getYouTubeId = (url: string) => {
     if (url.includes("youtu.be")) {
@@ -49,7 +32,7 @@ const SecureVideoPlayer = ({ videoUrl, title, onProgress }: SecureVideoPlayerPro
 
   const getYouTubeEmbed = (url: string) => {
     const videoId = getYouTubeId(url);
-    return `https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0&showinfo=0&controls=0&disablekb=1&fs=0&iv_load_policy=3&loop=0&playsinline=1&enablejsapi=1`;
+    return `https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0&showinfo=0`;
   };
 
   const handleMouseMove = () => {
@@ -60,7 +43,6 @@ const SecureVideoPlayer = ({ videoUrl, title, onProgress }: SecureVideoPlayerPro
     if (isPlaying) {
       controlsTimeoutRef.current = setTimeout(() => {
         setShowControls(false);
-        setShowQualityMenu(false);
       }, 3000);
     }
   };
@@ -85,7 +67,7 @@ const SecureVideoPlayer = ({ videoUrl, title, onProgress }: SecureVideoPlayerPro
     return false;
   };
 
-  const togglePlay = useCallback(() => {
+  const togglePlay = () => {
     if (!videoRef.current) return;
     if (isPlaying) {
       videoRef.current.pause();
@@ -94,7 +76,7 @@ const SecureVideoPlayer = ({ videoUrl, title, onProgress }: SecureVideoPlayerPro
       setShowCenterPlay(false);
     }
     setIsPlaying(!isPlaying);
-  }, [isPlaying]);
+  };
 
   const handleTimeUpdate = () => {
     if (!videoRef.current) return;
@@ -134,33 +116,6 @@ const SecureVideoPlayer = ({ videoUrl, title, onProgress }: SecureVideoPlayerPro
     videoRef.current.currentTime = Math.max(videoRef.current.currentTime - 10, 0);
   };
 
-  const handleQualityChange = (newQuality: VideoQuality) => {
-    const savedTime = videoRef.current?.currentTime || 0;
-    const wasPlaying = isPlaying;
-    
-    setQuality(newQuality);
-    setShowQualityMenu(false);
-    
-    // Note: Supabase storage typically serves single-quality files
-    // This sets up the structure for when multi-quality sources are available
-    // For now, we're adjusting playback rate simulation or future HLS support
-    
-    if (videoRef.current) {
-      videoRef.current.currentTime = savedTime;
-      if (wasPlaying) {
-        videoRef.current.play();
-      }
-    }
-  };
-
-  const handleWaiting = () => {
-    setIsBuffering(true);
-  };
-
-  const handleCanPlay = () => {
-    setIsBuffering(false);
-  };
-
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   useEffect(() => {
@@ -170,30 +125,48 @@ const SecureVideoPlayer = ({ videoUrl, title, onProgress }: SecureVideoPlayerPro
     }
   }, [isYouTube]);
 
-  // Close quality menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (showQualityMenu) {
-        setShowQualityMenu(false);
-      }
-    };
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, [showQualityMenu]);
+  // YouTube - Simple iframe embed
+  if (isYouTube) {
+    return (
+      <motion.div
+        ref={containerRef}
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl bg-black"
+        onContextMenu={handleContextMenu}
+      >
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black z-30">
+            <Loader2 className="w-12 h-12 text-primary animate-spin" />
+          </div>
+        )}
+        <iframe
+          src={getYouTubeEmbed(videoUrl)}
+          className="w-full h-full"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          referrerPolicy="strict-origin-when-cross-origin"
+          style={{ border: 'none' }}
+          onLoad={() => setIsLoading(false)}
+        />
+      </motion.div>
+    );
+  }
 
+  // Non-YouTube video (Supabase storage, etc.)
   return (
     <motion.div
       ref={containerRef}
       initial={{ opacity: 0, scale: 0.95, y: 20 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl group select-none"
+      className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl group select-none bg-black"
       onContextMenu={handleContextMenu}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => {
         if (isPlaying) {
           setShowControls(false);
-          setShowQualityMenu(false);
         }
       }}
       style={{ 
@@ -203,69 +176,44 @@ const SecureVideoPlayer = ({ videoUrl, title, onProgress }: SecureVideoPlayerPro
         msUserSelect: 'none',
       }}
     >
-      {/* Teal Gradient Background - matching reference */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#2d6b6b] to-[#1a4a4a]" />
-
       {/* Loading State */}
       <AnimatePresence>
-        {(isLoading || isBuffering) && (
+        {isLoading && (
           <motion.div
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 flex flex-col items-center justify-center bg-[#1a4a4a]/80 z-30"
+            className="absolute inset-0 flex flex-col items-center justify-center bg-black z-30"
           >
-            <Loader2 className="w-12 h-12 text-[#ff6b35] animate-spin" />
-            {isBuffering && (
-              <p className="text-white text-sm mt-2">Soo dejinaya...</p>
-            )}
+            <Loader2 className="w-12 h-12 text-primary animate-spin" />
+            <p className="text-white text-sm mt-2">Soo dejinaya...</p>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Supabase Storage Video */}
-      {isSupabaseVideo && (
-        <video
-          ref={videoRef}
-          src={videoUrl}
-          className="absolute inset-0 w-full h-full object-contain z-10"
-          onTimeUpdate={handleTimeUpdate}
-          onLoadedMetadata={handleLoadedMetadata}
-          onPlay={() => setIsPlaying(true)}
-          onPause={() => setIsPlaying(false)}
-          onEnded={() => {
-            setIsPlaying(false);
-            setShowCenterPlay(true);
-          }}
-          onWaiting={handleWaiting}
-          onCanPlay={handleCanPlay}
-          controlsList="nodownload nofullscreen noremoteplayback"
-          disablePictureInPicture
-          playsInline
-          style={{ pointerEvents: 'none' }}
-        />
-      )}
+      {/* Video Element */}
+      <video
+        ref={videoRef}
+        src={videoUrl}
+        className="absolute inset-0 w-full h-full object-contain z-10"
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        onEnded={() => {
+          setIsPlaying(false);
+          setShowCenterPlay(true);
+        }}
+        onWaiting={() => setIsLoading(true)}
+        onCanPlay={() => setIsLoading(false)}
+        controlsList="nodownload nofullscreen noremoteplayback"
+        disablePictureInPicture
+        playsInline
+        style={{ pointerEvents: 'none' }}
+      />
 
-      {/* YouTube iframe with protection */}
-      {isYouTube && (
-        <div className="absolute inset-0 z-10">
-          <iframe
-            src={getYouTubeEmbed(videoUrl)}
-            className="w-full h-full pointer-events-none"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            referrerPolicy="strict-origin-when-cross-origin"
-            style={{ border: 'none', pointerEvents: 'none' }}
-          />
-          <div 
-            className="absolute inset-0 z-10 cursor-pointer" 
-            onClick={() => setShowCenterPlay(!showCenterPlay)}
-            onContextMenu={handleContextMenu}
-          />
-        </div>
-      )}
-
-      {/* Center Play Button - Orange/Red like reference */}
+      {/* Center Play Button */}
       <AnimatePresence>
-        {showCenterPlay && !isLoading && !isBuffering && (
+        {showCenterPlay && !isLoading && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -276,24 +224,20 @@ const SecureVideoPlayer = ({ videoUrl, title, onProgress }: SecureVideoPlayerPro
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
-              className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-[#ff6b35] to-[#e55a2b] hover:from-[#ff7a4d] hover:to-[#ff6b35] rounded-full flex items-center justify-center shadow-xl shadow-[#ff6b35]/30 transition-all"
+              className="w-16 h-16 md:w-20 md:h-20 bg-primary hover:bg-primary/90 rounded-full flex items-center justify-center shadow-xl transition-all"
               onClick={(e) => {
                 e.stopPropagation();
-                if (isSupabaseVideo) {
-                  togglePlay();
-                } else {
-                  setShowCenterPlay(false);
-                }
+                togglePlay();
               }}
             >
-              <Play className="w-8 h-8 md:w-10 md:h-10 text-white fill-white ml-1" />
+              <Play className="w-8 h-8 md:w-10 md:h-10 text-primary-foreground fill-primary-foreground ml-1" />
             </motion.button>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Click area to toggle play/pause */}
-      {isSupabaseVideo && !showCenterPlay && (
+      {!showCenterPlay && (
         <div 
           className="absolute inset-0 z-15 cursor-pointer"
           onClick={togglePlay}
@@ -314,14 +258,14 @@ const SecureVideoPlayer = ({ videoUrl, title, onProgress }: SecureVideoPlayerPro
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
             
             <div className="relative px-4 pb-4 pt-8">
-              {/* Progress Bar - Red like reference */}
+              {/* Progress Bar */}
               <div 
                 className="mb-3 cursor-pointer group/progress"
-                onClick={isSupabaseVideo ? handleSeek : undefined}
+                onClick={handleSeek}
               >
                 <div className="w-full h-1 bg-white/30 rounded-full overflow-hidden group-hover/progress:h-2 transition-all">
                   <motion.div 
-                    className="h-full bg-[#ff3333] rounded-full"
+                    className="h-full bg-primary rounded-full"
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
@@ -331,7 +275,7 @@ const SecureVideoPlayer = ({ videoUrl, title, onProgress }: SecureVideoPlayerPro
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <button 
-                    className="text-white hover:text-[#ff6b35] transition-colors"
+                    className="text-white hover:text-primary transition-colors"
                     onClick={togglePlay}
                   >
                     {isPlaying ? (
@@ -341,88 +285,35 @@ const SecureVideoPlayer = ({ videoUrl, title, onProgress }: SecureVideoPlayerPro
                     )}
                   </button>
                   <button 
-                    className="text-white hover:text-[#ff6b35] transition-colors"
+                    className="text-white hover:text-primary transition-colors"
                     onClick={skipBackward}
                   >
                     <SkipBack className="w-5 h-5" />
                   </button>
                   <button 
-                    className="text-white hover:text-[#ff6b35] transition-colors"
+                    className="text-white hover:text-primary transition-colors"
                     onClick={skipForward}
                   >
                     <SkipForward className="w-5 h-5" />
                   </button>
-                  <div className="flex items-center gap-2 ml-2">
-                    <button 
-                      className="text-white hover:text-[#ff6b35] transition-colors"
-                      onClick={handleVolumeToggle}
-                    >
-                      {isMuted ? (
-                        <VolumeX className="w-5 h-5" />
-                      ) : (
-                        <Volume2 className="w-5 h-5" />
-                      )}
-                    </button>
-                    {/* Red dot indicator */}
-                    <div className="w-2 h-2 bg-[#ff3333] rounded-full animate-pulse" />
-                  </div>
+                  <button 
+                    className="text-white hover:text-primary transition-colors"
+                    onClick={handleVolumeToggle}
+                  >
+                    {isMuted ? (
+                      <VolumeX className="w-5 h-5" />
+                    ) : (
+                      <Volume2 className="w-5 h-5" />
+                    )}
+                  </button>
                   <span className="text-white text-sm font-medium ml-2">
                     {formatTime(currentTime)} / {formatTime(duration)}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  {/* Quality Selector */}
-                  <div className="relative">
-                    <button 
-                      className="text-white hover:text-[#ff6b35] transition-colors flex items-center gap-1 text-sm font-medium bg-white/10 px-2 py-1 rounded"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowQualityMenu(!showQualityMenu);
-                      }}
-                    >
-                      <Settings className="w-4 h-4" />
-                      <span className="hidden sm:inline">
-                        {quality === "auto" ? "HD" : `${quality}p`}
-                      </span>
-                    </button>
-
-                    {/* Quality Menu */}
-                    <AnimatePresence>
-                      {showQualityMenu && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                          className="absolute bottom-full right-0 mb-2 bg-black/90 backdrop-blur-sm rounded-lg overflow-hidden min-w-[160px] border border-white/10"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <div className="p-2">
-                            <p className="text-white/60 text-xs px-2 py-1 mb-1">Tayada Video</p>
-                            {(["auto", "1080", "720", "480", "360"] as VideoQuality[]).map((q) => (
-                              <button
-                                key={q}
-                                className={`w-full text-left px-3 py-2 text-sm rounded transition-colors flex items-center justify-between ${
-                                  quality === q
-                                    ? "bg-[#ff6b35] text-white"
-                                    : "text-white hover:bg-white/10"
-                                }`}
-                                onClick={() => handleQualityChange(q)}
-                              >
-                                <span>{qualityLabels[q]}</span>
-                                {quality === q && (
-                                  <span className="w-2 h-2 bg-white rounded-full" />
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
                   <button 
-                    className="text-white hover:text-[#ff6b35] transition-colors"
+                    className="text-white hover:text-primary transition-colors"
                     onClick={toggleFullscreen}
                   >
                     <Maximize className="w-5 h-5" />
@@ -433,13 +324,6 @@ const SecureVideoPlayer = ({ videoUrl, title, onProgress }: SecureVideoPlayerPro
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Invisible overlay to prevent link copying */}
-      <div 
-        className="absolute inset-0 z-[5]" 
-        onContextMenu={handleContextMenu}
-        style={{ pointerEvents: 'none' }}
-      />
     </motion.div>
   );
 };
