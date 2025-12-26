@@ -71,6 +71,8 @@ interface Lesson {
   duration_minutes: number | null;
   is_published: boolean;
   order_index: number;
+  is_locked: boolean | null;
+  unlock_date: string | null;
 }
 
 interface LessonResource {
@@ -188,8 +190,40 @@ const Courses = () => {
     return progress?.is_completed === true;
   };
 
+  const isLessonLocked = (lesson: Lesson) => {
+    // Check if lesson is locked by admin
+    if (lesson.is_locked) {
+      // Check if unlock_date has passed
+      if (lesson.unlock_date) {
+        const unlockDate = new Date(lesson.unlock_date);
+        const now = new Date();
+        return now < unlockDate;
+      }
+      return true; // Locked with no unlock date
+    }
+    return false;
+  };
+
+  const getUnlockDateText = (lesson: Lesson) => {
+    if (!lesson.unlock_date) return null;
+    const unlockDate = new Date(lesson.unlock_date);
+    const options: Intl.DateTimeFormatOptions = { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    };
+    return unlockDate.toLocaleDateString('so-SO', options);
+  };
+
   const canAccessLesson = (lesson: Lesson, index: number) => {
-    // First lesson is always accessible if user has playlist access
+    // Check if lesson is locked by admin
+    if (isLessonLocked(lesson)) {
+      return false;
+    }
+    
+    // First lesson is always accessible if user has playlist access and not locked
     if (index === 0) return true;
     
     // For other lessons, check if previous lesson is completed
@@ -369,6 +403,19 @@ const Courses = () => {
       toast({
         title: "U baahan tahay lacag bixin",
         description: "Si aad u daawato casharada, la xiriir WhatsApp: +252711983546",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if lesson is locked by admin
+    if (isLessonLocked(lesson)) {
+      const unlockDateText = getUnlockDateText(lesson);
+      toast({
+        title: "Casharka waa xiran yahay",
+        description: unlockDateText 
+          ? `Casharkaan wuxuu furnaanayaa: ${unlockDateText}` 
+          : "Macalinka ayaa xiraya casharkaan. La xiriir admin-ka.",
         variant: "destructive",
       });
       return;
@@ -667,8 +714,10 @@ const Courses = () => {
             <div className="space-y-4">
               {lessons.map((lesson, index) => {
                 const isCompleted = isLessonCompleted(lesson.id);
+                const isAdminLocked = isLessonLocked(lesson);
                 const isAccessible = hasFullAccess && canAccessLesson(lesson, index);
                 const isLocked = !hasFullAccess || !canAccessLesson(lesson, index);
+                const unlockDateText = getUnlockDateText(lesson);
 
                 return (
                   <motion.div
@@ -678,7 +727,7 @@ const Courses = () => {
                     transition={{ delay: index * 0.05 }}
                     onClick={() => handleLessonClick(lesson, index)}
                     className={`bg-card rounded-xl border border-border p-4 flex items-center gap-4 transition-all ${
-                      isAccessible ? "cursor-pointer hover:shadow-md" : "cursor-not-allowed opacity-75"
+                      isAccessible ? "cursor-pointer hover:shadow-md hover:border-primary/30" : "cursor-not-allowed opacity-75"
                     }`}
                   >
                     {/* Completion Status */}
@@ -686,6 +735,10 @@ const Courses = () => {
                       {isCompleted ? (
                         <div className="w-8 h-8 rounded-full bg-success/20 flex items-center justify-center">
                           <CheckCircle className="w-5 h-5 text-success" />
+                        </div>
+                      ) : isAdminLocked ? (
+                        <div className="w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center">
+                          <Lock className="w-4 h-4 text-orange-500" />
                         </div>
                       ) : isAccessible ? (
                         <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
@@ -721,8 +774,25 @@ const Courses = () => {
                           <span className="text-success text-xs font-medium ml-2">✓ Dhamaystay</span>
                         )}
                       </div>
+                      {/* Show unlock date for admin locked lessons */}
+                      {isAdminLocked && unlockDateText && (
+                        <div className="flex items-center gap-1 text-xs text-orange-500 mt-1">
+                          <Clock className="w-3 h-3" />
+                          <span>Furnaanayaa: {unlockDateText}</span>
+                        </div>
+                      )}
                     </div>
-                    {isLocked ? (
+                    {isAdminLocked ? (
+                      <div className="flex flex-col items-end gap-1">
+                        <div className="flex items-center gap-2 text-orange-500">
+                          <Lock className="w-5 h-5" />
+                          <span className="text-xs font-medium">Xiran</span>
+                        </div>
+                        {unlockDateText && (
+                          <span className="text-xs text-muted-foreground hidden sm:block">Sug waqtiga</span>
+                        )}
+                      </div>
+                    ) : isLocked ? (
                       <div className="flex items-center gap-2 text-destructive">
                         <Lock className="w-5 h-5" />
                         <span className="text-xs font-medium">Xiran</span>
