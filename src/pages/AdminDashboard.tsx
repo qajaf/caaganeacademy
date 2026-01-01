@@ -15,6 +15,8 @@ import AdminNotifications from "@/components/admin/AdminNotifications";
 import AdminRoles from "@/components/admin/AdminRoles";
 import AdminAIAssistant from "@/components/admin/AdminAIAssistant";
 import AdminEscalations from "@/components/admin/AdminEscalations";
+import AdminMessages from "@/components/admin/AdminMessages";
+import AdminRecycleBin from "@/components/admin/AdminRecycleBin";
 
 const AdminDashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -71,6 +73,8 @@ const AdminDashboard = () => {
         return <AdminCourses />;
       case "students":
         return <AdminStudents />;
+      case "messages":
+        return <AdminMessages />;
       case "progress":
         return <AdminStudentProgress />;
       case "access":
@@ -85,6 +89,8 @@ const AdminDashboard = () => {
         return <AdminNotifications />;
       case "bookings":
         return <AdminBookings />;
+      case "recycle-bin":
+        return <AdminRecycleBin />;
       case "settings":
         return (
           <div>
