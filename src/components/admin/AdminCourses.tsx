@@ -34,12 +34,14 @@ interface Course {
   description: string | null;
   thumbnail_url: string | null;
   is_published: boolean;
+  is_free: boolean;
   order_index: number;
   created_at: string;
   price: number;
   features: string[];
   instructor_name: string | null;
   playlists_count?: number;
+  lessons_count?: number;
 }
 
 const AdminCourses = () => {
@@ -54,6 +56,7 @@ const AdminCourses = () => {
     description: "",
     thumbnail_url: "",
     is_published: false,
+    is_free: false,
     price: 0,
     features: "",
     instructor_name: "Caagane",
@@ -75,14 +78,25 @@ const AdminCourses = () => {
 
       if (error) throw error;
 
-      // Get playlist counts
+      // Get playlist counts and direct lesson counts
       const coursesWithCounts = await Promise.all(
         (data || []).map(async (course) => {
-          const { count } = await supabase
-            .from("playlists")
-            .select("*", { count: "exact", head: true })
-            .eq("course_id", course.id);
-          return { ...course, playlists_count: count || 0 };
+          const [playlistRes, lessonsRes] = await Promise.all([
+            supabase
+              .from("playlists")
+              .select("*", { count: "exact", head: true })
+              .eq("course_id", course.id),
+            supabase
+              .from("lessons")
+              .select("*", { count: "exact", head: true })
+              .eq("course_id", course.id)
+              .is("playlist_id", null),
+          ]);
+          return { 
+            ...course, 
+            playlists_count: playlistRes.count || 0,
+            lessons_count: lessonsRes.count || 0,
+          };
         })
       );
 
@@ -117,7 +131,8 @@ const AdminCourses = () => {
             description: formData.description || null,
             thumbnail_url: formData.thumbnail_url || null,
             is_published: formData.is_published,
-            price: formData.price,
+            is_free: formData.is_free,
+            price: formData.is_free ? 0 : formData.price,
             features: featuresArray,
             instructor_name: formData.instructor_name || 'Caagane',
           })
@@ -131,7 +146,8 @@ const AdminCourses = () => {
           description: formData.description || null,
           thumbnail_url: formData.thumbnail_url || null,
           is_published: formData.is_published,
-          price: formData.price,
+          is_free: formData.is_free,
+          price: formData.is_free ? 0 : formData.price,
           features: featuresArray,
           instructor_name: formData.instructor_name || 'Caagane',
           order_index: courses.length,
@@ -143,7 +159,7 @@ const AdminCourses = () => {
 
       setDialogOpen(false);
       setEditingCourse(null);
-      setFormData({ title: "", description: "", thumbnail_url: "", is_published: false, price: 0, features: "", instructor_name: "Caagane" });
+      setFormData({ title: "", description: "", thumbnail_url: "", is_published: false, is_free: false, price: 0, features: "", instructor_name: "Caagane" });
       fetchCourses();
     } catch (error) {
       console.error("Error saving course:", error);
@@ -182,6 +198,7 @@ const AdminCourses = () => {
       description: course.description || "",
       thumbnail_url: course.thumbnail_url || "",
       is_published: course.is_published,
+      is_free: course.is_free || false,
       price: course.price || 0,
       features: (course.features || []).join("\n"),
       instructor_name: course.instructor_name || "Caagane",
@@ -217,7 +234,7 @@ const AdminCourses = () => {
           setDialogOpen(open);
           if (!open) {
             setEditingCourse(null);
-            setFormData({ title: "", description: "", thumbnail_url: "", is_published: false, price: 0, features: "", instructor_name: "Caagane" });
+            setFormData({ title: "", description: "", thumbnail_url: "", is_published: false, is_free: false, price: 0, features: "", instructor_name: "Caagane" });
           }
         }}>
           <DialogTrigger asChild>
@@ -312,18 +329,28 @@ const AdminCourses = () => {
                   </Button>
                 </div>
               </div>
-              <div>
-                <Label htmlFor="price">Qiimaha ($ bishii)</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-                  placeholder="7"
+              <div className="flex items-center justify-between">
+                <Label htmlFor="is_free">Bilaash (Free Course)</Label>
+                <Switch
+                  id="is_free"
+                  checked={formData.is_free}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_free: checked, price: checked ? 0 : formData.price })}
                 />
               </div>
+              {!formData.is_free && (
+                <div>
+                  <Label htmlFor="price">Qiimaha ($ bishii)</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                    placeholder="7"
+                  />
+                </div>
+              )}
               <div>
                 <Label htmlFor="features">Waxa Ardaygu Helayo (mid kasta sadar cusub)</Label>
                 <Textarea
@@ -391,7 +418,12 @@ const AdminCourses = () => {
                     <GraduationCap className="w-12 h-12 text-primary" />
                   </div>
                 )}
-                <div className="absolute top-2 right-2">
+                <div className="absolute top-2 right-2 flex gap-1">
+                  {course.is_free && (
+                    <span className="px-2 py-1 text-xs rounded-full bg-accent text-accent-foreground">
+                      FREE
+                    </span>
+                  )}
                   <span className={`px-2 py-1 text-xs rounded-full ${
                     course.is_published
                       ? "bg-success text-success-foreground"
@@ -407,7 +439,9 @@ const AdminCourses = () => {
                   {course.description || "No description"}
                 </p>
                 <div className="flex items-center gap-4 text-sm mb-4">
-                  <span className="font-bold text-primary">${course.price || 0}/bishii</span>
+                  <span className="font-bold text-primary">
+                    {course.is_free ? "Bilaash" : `$${course.price || 0}/bishii`}
+                  </span>
                   <span className="text-muted-foreground flex items-center gap-1">
                     <BookOpen className="w-4 h-4" />
                     {course.playlists_count} playlists

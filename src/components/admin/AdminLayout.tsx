@@ -18,6 +18,8 @@ import {
   ListMusic,
   Bell,
   MessageSquare,
+  Send,
+  Trash2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -31,6 +33,7 @@ const menuItems = [
   { id: "overview", label: "Dashboard", icon: LayoutDashboard },
   { id: "courses", label: "Courses", icon: GraduationCap },
   { id: "students", label: "Ardayda", icon: Users },
+  { id: "messages", label: "Fariimaha", icon: Send },
   { id: "progress", label: "Progress", icon: TrendingUp },
   { id: "access", label: "Course Access", icon: BookOpen },
   { id: "playlist-access", label: "Playlist Access", icon: ListMusic },
@@ -38,6 +41,7 @@ const menuItems = [
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "roles", label: "Admin Roles", icon: Settings },
   { id: "bookings", label: "Ballamaha", icon: Calendar },
+  { id: "recycle-bin", label: "Qashinka", icon: Trash2 },
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
