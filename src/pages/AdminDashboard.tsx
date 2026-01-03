@@ -15,7 +15,6 @@ import AdminNotifications from "@/components/admin/AdminNotifications";
 import AdminRoles from "@/components/admin/AdminRoles";
 import AdminAIAssistant from "@/components/admin/AdminAIAssistant";
 import AdminEscalations from "@/components/admin/AdminEscalations";
-import AdminMessages from "@/components/admin/AdminMessages";
 import AdminRecycleBin from "@/components/admin/AdminRecycleBin";
 
 const AdminDashboard = () => {
@@ -73,8 +72,6 @@ const AdminDashboard = () => {
         return <AdminCourses />;
       case "students":
         return <AdminStudents />;
-      case "messages":
-        return <AdminMessages />;
       case "progress":
         return <AdminStudentProgress />;
       case "access":

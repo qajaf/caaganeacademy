@@ -18,8 +18,9 @@ import {
   ListMusic,
   Bell,
   MessageSquare,
-  Send,
   Trash2,
+  Home,
+  ArrowLeft,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -33,7 +34,6 @@ const menuItems = [
   { id: "overview", label: "Dashboard", icon: LayoutDashboard },
   { id: "courses", label: "Courses", icon: GraduationCap },
   { id: "students", label: "Ardayda", icon: Users },
-  { id: "messages", label: "Fariimaha", icon: Send },
   { id: "progress", label: "Progress", icon: TrendingUp },
   { id: "access", label: "Course Access", icon: BookOpen },
   { id: "playlist-access", label: "Playlist Access", icon: ListMusic },
@@ -88,6 +88,25 @@ const AdminLayout = ({ children, activeTab, onTabChange }: AdminLayoutProps) => 
               )}
             </AnimatePresence>
           </div>
+          {/* Home Button */}
+          <button
+            onClick={() => navigate("/")}
+            className="w-full mt-3 flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Home className="w-5 h-5 flex-shrink-0" />
+            <AnimatePresence>
+              {sidebarOpen && (
+                <motion.span
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  className="font-medium whitespace-nowrap"
+                >
+                  Guriga
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </button>
         </div>
 
         {/* Toggle Button */}
@@ -179,6 +198,17 @@ const AdminLayout = ({ children, activeTab, onTabChange }: AdminLayoutProps) => 
             className="lg:hidden fixed top-16 left-0 right-0 bottom-0 bg-background z-40 p-4"
           >
             <nav className="space-y-2">
+              {/* Home Button for Mobile */}
+              <button
+                onClick={() => {
+                  navigate("/");
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted text-muted-foreground"
+              >
+                <Home className="w-5 h-5" />
+                <span className="font-medium">Guriga</span>
+              </button>
               {menuItems.map((item) => (
                 <button
                   key={item.id}

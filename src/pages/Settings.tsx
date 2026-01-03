@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, LogOut, User, Phone, Save, Camera } from "lucide-react";
+import { Loader2, LogOut, User, Phone, Save, Camera, Home, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ThemeToggle from "@/components/ThemeToggle";
 import caaganelogo from "@/assets/caagane-academy-logo.jpg";
@@ -200,7 +200,10 @@ const Settings = () => {
       <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
               <img src={caaganelogo} alt="Caagane Academy" className="w-10 h-10 rounded-xl object-cover" />
               <span className="text-xl font-display font-bold">
                 <span className="text-primary">Caagane</span>
@@ -208,6 +211,9 @@ const Settings = () => {
               </span>
             </div>
             <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+                <Home className="w-5 h-5" />
+              </Button>
               <ThemeToggle />
               <Button variant="ghost" onClick={handleSignOut}>
                 <LogOut className="w-4 h-4" />

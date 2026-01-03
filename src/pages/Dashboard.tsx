@@ -11,7 +11,8 @@ import {
   Settings, 
   FileText, 
   LogOut,
-  Loader2
+  Loader2,
+  Home
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import NotificationCenter from "@/components/notifications/NotificationCenter";
@@ -113,7 +114,10 @@ const Dashboard = () => {
       <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+                <Home className="w-5 h-5" />
+              </Button>
               <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center">
                 <GraduationCap className="w-6 h-6 text-primary-foreground" />
               </div>

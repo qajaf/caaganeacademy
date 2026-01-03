@@ -124,6 +124,8 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [movingLesson, setMovingLesson] = useState<Lesson | null>(null);
   const [allPlaylists, setAllPlaylists] = useState<PlaylistOption[]>([]);
+  const [allCourses, setAllCourses] = useState<Course[]>([]);
+  const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string>("");
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
@@ -137,6 +139,15 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
 
   const fetchAllPlaylists = async () => {
     try {
+      // Fetch all courses
+      const { data: coursesData, error: coursesError } = await supabase
+        .from("courses")
+        .select("id, title")
+        .order("title");
+
+      if (coursesError) throw coursesError;
+      setAllCourses(coursesData || []);
+
       // Fetch all playlists with their course info
       const { data: playlistsData, error: playlistsError } = await supabase
         .from("playlists")
@@ -144,13 +155,6 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
         .order("title");
 
       if (playlistsError) throw playlistsError;
-
-      // Fetch all courses
-      const { data: coursesData, error: coursesError } = await supabase
-        .from("courses")
-        .select("id, title");
-
-      if (coursesError) throw coursesError;
 
       const coursesMap = new Map(coursesData?.map(c => [c.id, c.title]) || []);
       
@@ -266,12 +270,31 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
   };
 
   const deleteLesson = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this lesson?")) return;
+    if (!confirm("Ma hubtaa inaad tirtirto casharkaan?")) return;
 
     try {
+      // First get the lesson data to save to recycle bin
+      const lessonToDelete = lessons.find(l => l.id === id);
+      if (!lessonToDelete) throw new Error("Lesson not found");
+
+      // Get current user for deleted_by field
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Save to deleted_items (recycle bin) using JSON.parse/stringify to ensure proper Json type
+      const { error: saveError } = await supabase.from("deleted_items").insert([{
+        item_type: "lesson",
+        item_id: id,
+        item_data: JSON.parse(JSON.stringify(lessonToDelete)),
+        deleted_by: user?.id || null,
+      }]);
+
+      if (saveError) throw saveError;
+
+      // Now delete from lessons
       const { error } = await supabase.from("lessons").delete().eq("id", id);
       if (error) throw error;
-      toast({ title: "Success", description: "Lesson deleted successfully" });
+      
+      toast({ title: "Waa la tirtiray", description: "Casharka waa la dhigay qashinka" });
       fetchLessons();
     } catch (error) {
       console.error("Error deleting lesson:", error);
@@ -388,9 +411,15 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
 
   const openMoveDialog = (lesson: Lesson) => {
     setMovingLesson(lesson);
+    setSelectedCourseId("");
     setSelectedPlaylistId("");
     setMoveDialogOpen(true);
   };
+
+  // Get playlists filtered by selected course
+  const filteredPlaylists = selectedCourseId 
+    ? allPlaylists.filter(p => p.course_id === selectedCourseId && p.id !== playlist.id)
+    : allPlaylists.filter(p => p.id !== playlist.id);
 
   const addResource = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1190,31 +1219,49 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
         setMoveDialogOpen(open);
         if (!open) {
           setMovingLesson(null);
+          setSelectedCourseId("");
           setSelectedPlaylistId("");
         }
       }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>U dir Playlist Kale</DialogTitle>
+            <DialogTitle>U dir Course / Playlist Kale</DialogTitle>
             <DialogDescription>
-              Dooro playlist-ka aad rabto inaad u dirto casharka "{movingLesson?.title}"
+              Dooro course-ka iyo playlist-ka aad rabto inaad u dirto casharka "{movingLesson?.title}"
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Playlist-ka Cusub</Label>
+              <Label>Course-ka (ikhtiyaari)</Label>
+              <Select value={selectedCourseId} onValueChange={(val) => {
+                setSelectedCourseId(val);
+                setSelectedPlaylistId("");
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Dooro course..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Dhammaan Courses</SelectItem>
+                  {allCourses.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Playlist-ka Cusub *</Label>
               <Select value={selectedPlaylistId} onValueChange={setSelectedPlaylistId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Dooro playlist..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {allPlaylists
-                    .filter(p => p.id !== playlist.id)
-                    .map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.title} ({p.course_title})
-                      </SelectItem>
-                    ))}
+                  {filteredPlaylists.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.title} ({p.course_title})
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
