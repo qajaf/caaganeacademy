@@ -23,6 +23,8 @@ import {
   Video,
   ChevronRight,
   ArrowLeft,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AdminLessons from "./AdminLessons";
@@ -163,6 +165,37 @@ const AdminCoursePlaylists = ({ course, onBack }: AdminCoursePlaylistsProps) => 
       toast({
         title: "Error",
         description: "Failed to delete playlist",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const movePlaylist = async (playlist: Playlist, direction: "up" | "down") => {
+    const currentIndex = playlists.findIndex(p => p.id === playlist.id);
+    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    
+    if (targetIndex < 0 || targetIndex >= playlists.length) return;
+
+    const targetPlaylist = playlists[targetIndex];
+    
+    try {
+      await supabase
+        .from("playlists")
+        .update({ order_index: targetPlaylist.order_index })
+        .eq("id", playlist.id);
+
+      await supabase
+        .from("playlists")
+        .update({ order_index: playlist.order_index })
+        .eq("id", targetPlaylist.id);
+
+      toast({ title: "Success", description: "Playlist waa la dhaqaajiyay" });
+      fetchPlaylists();
+    } catch (error) {
+      console.error("Error moving playlist:", error);
+      toast({
+        title: "Error",
+        description: "Failed to move playlist",
         variant: "destructive",
       });
     }
@@ -334,6 +367,27 @@ const AdminCoursePlaylists = ({ course, onBack }: AdminCoursePlaylistsProps) => 
                   <span>{playlist.lessons_count} casharo</span>
                 </div>
                 <div className="flex items-center gap-2">
+                  {/* Move Up/Down */}
+                  <div className="flex flex-col">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => movePlaylist(playlist, "up")}
+                      disabled={index === 0}
+                    >
+                      <ArrowUp className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => movePlaylist(playlist, "down")}
+                      disabled={index === playlists.length - 1}
+                    >
+                      <ArrowDown className="w-3 h-3" />
+                    </Button>
+                  </div>
                   <Button
                     variant="outline"
                     size="sm"

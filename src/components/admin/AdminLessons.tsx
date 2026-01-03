@@ -15,6 +15,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   ArrowLeft,
   Plus,
   Edit,
@@ -29,12 +36,28 @@ import {
   Lock,
   Unlock,
   Calendar,
+  ArrowUp,
+  ArrowDown,
+  Send,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Playlist {
   id: string;
   title: string;
+  course_id?: string | null;
+}
+
+interface Course {
+  id: string;
+  title: string;
+}
+
+interface PlaylistOption {
+  id: string;
+  title: string;
+  course_id: string | null;
+  course_title?: string;
 }
 
 interface Lesson {
@@ -98,6 +121,10 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
   const [noteContent, setNoteContent] = useState("");
   const [uploadingPdf, setUploadingPdf] = useState(false);
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [movingLesson, setMovingLesson] = useState<Lesson | null>(null);
+  const [allPlaylists, setAllPlaylists] = useState<PlaylistOption[]>([]);
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState<string>("");
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -105,7 +132,38 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
 
   useEffect(() => {
     fetchLessons();
+    fetchAllPlaylists();
   }, [playlist.id]);
+
+  const fetchAllPlaylists = async () => {
+    try {
+      // Fetch all playlists with their course info
+      const { data: playlistsData, error: playlistsError } = await supabase
+        .from("playlists")
+        .select("id, title, course_id")
+        .order("title");
+
+      if (playlistsError) throw playlistsError;
+
+      // Fetch all courses
+      const { data: coursesData, error: coursesError } = await supabase
+        .from("courses")
+        .select("id, title");
+
+      if (coursesError) throw coursesError;
+
+      const coursesMap = new Map(coursesData?.map(c => [c.id, c.title]) || []);
+      
+      const playlistsWithCourses = (playlistsData || []).map(p => ({
+        ...p,
+        course_title: p.course_id ? coursesMap.get(p.course_id) || "Unknown Course" : "No Course"
+      }));
+
+      setAllPlaylists(playlistsWithCourses);
+    } catch (error) {
+      console.error("Error fetching playlists:", error);
+    }
+  };
 
   const fetchLessons = async () => {
     try {
@@ -246,6 +304,92 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
         variant: "destructive",
       });
     }
+  };
+
+  const moveLesson = async (lesson: Lesson, direction: "up" | "down") => {
+    const currentIndex = lessons.findIndex(l => l.id === lesson.id);
+    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    
+    if (targetIndex < 0 || targetIndex >= lessons.length) return;
+
+    const targetLesson = lessons[targetIndex];
+    
+    try {
+      // Swap order_index values
+      await supabase
+        .from("lessons")
+        .update({ order_index: targetLesson.order_index })
+        .eq("id", lesson.id);
+
+      await supabase
+        .from("lessons")
+        .update({ order_index: lesson.order_index })
+        .eq("id", targetLesson.id);
+
+      toast({ title: "Success", description: "Casharka waa la dhaqaajiyay" });
+      fetchLessons();
+    } catch (error) {
+      console.error("Error moving lesson:", error);
+      toast({
+        title: "Error",
+        description: "Failed to move lesson",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const sendLessonToPlaylist = async () => {
+    if (!movingLesson || !selectedPlaylistId) return;
+    
+    try {
+      // Get the max order_index for the target playlist
+      const { data: existingLessons } = await supabase
+        .from("lessons")
+        .select("order_index")
+        .eq("playlist_id", selectedPlaylistId)
+        .order("order_index", { ascending: false })
+        .limit(1);
+
+      const newOrderIndex = existingLessons && existingLessons.length > 0 
+        ? (existingLessons[0].order_index || 0) + 1 
+        : 0;
+
+      // Get the course_id for the target playlist
+      const targetPlaylist = allPlaylists.find(p => p.id === selectedPlaylistId);
+
+      const { error } = await supabase
+        .from("lessons")
+        .update({ 
+          playlist_id: selectedPlaylistId,
+          order_index: newOrderIndex,
+          course_id: targetPlaylist?.course_id || null
+        })
+        .eq("id", movingLesson.id);
+
+      if (error) throw error;
+
+      toast({ 
+        title: "Success", 
+        description: `Casharka waa loo wareejiyay playlist kale` 
+      });
+      setMoveDialogOpen(false);
+      setMovingLesson(null);
+      setSelectedPlaylistId("");
+      fetchLessons();
+    } catch (error) {
+      console.error("Error moving lesson:", error);
+      toast({
+        title: "Error",
+        description: "Failed to move lesson",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const openMoveDialog = (lesson: Lesson) => {
+    setMovingLesson(lesson);
+    setSelectedPlaylistId("");
+    setMoveDialogOpen(true);
   };
 
   const addResource = async (e: React.FormEvent) => {
@@ -742,7 +886,36 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                {/* Move Up/Down buttons */}
+                <div className="flex flex-col">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => moveLesson(lesson, "up")}
+                    disabled={index === 0}
+                  >
+                    <ArrowUp className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => moveLesson(lesson, "down")}
+                    disabled={index === lessons.length - 1}
+                  >
+                    <ArrowDown className="w-3 h-3" />
+                  </Button>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openMoveDialog(lesson)}
+                  title="U dir playlist kale"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
@@ -1009,6 +1182,60 @@ const AdminLessons = ({ playlist, onBack }: AdminLessonsProps) => {
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Ku dar Note"}
             </Button>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Move Lesson Dialog */}
+      <Dialog open={moveDialogOpen} onOpenChange={(open) => {
+        setMoveDialogOpen(open);
+        if (!open) {
+          setMovingLesson(null);
+          setSelectedPlaylistId("");
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>U dir Playlist Kale</DialogTitle>
+            <DialogDescription>
+              Dooro playlist-ka aad rabto inaad u dirto casharka "{movingLesson?.title}"
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Playlist-ka Cusub</Label>
+              <Select value={selectedPlaylistId} onValueChange={setSelectedPlaylistId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Dooro playlist..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {allPlaylists
+                    .filter(p => p.id !== playlist.id)
+                    .map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.title} ({p.course_title})
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setMoveDialogOpen(false)}
+                className="flex-1"
+              >
+                Ka noqo
+              </Button>
+              <Button
+                onClick={sendLessonToPlaylist}
+                disabled={!selectedPlaylistId}
+                className="flex-1"
+              >
+                <Send className="w-4 h-4 mr-2" />
+                U dir
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
