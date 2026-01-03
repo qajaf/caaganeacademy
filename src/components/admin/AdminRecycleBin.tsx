@@ -149,7 +149,8 @@ const AdminRecycleBin = () => {
     }
   };
 
-  const getItemTitle = (item: DeletedItem) => {
+  const getItemTitle = (item: DeletedItem | null) => {
+    if (!item || !item.item_data) return "Unknown";
     return (item.item_data as { title?: string }).title || "Unknown";
   };
 
