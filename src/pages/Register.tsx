@@ -134,6 +134,29 @@ const Register = () => {
         if (profileError) {
           console.error("Profile update error:", profileError);
         }
+
+        // Grant access to all FREE courses automatically
+        const { data: freeCourses, error: freeCoursesError } = await supabase
+          .from("courses")
+          .select("id")
+          .eq("is_free", true)
+          .eq("is_published", true);
+
+        if (!freeCoursesError && freeCourses && freeCourses.length > 0) {
+          const accessRecords = freeCourses.map(course => ({
+            user_id: data.user!.id,
+            course_id: course.id,
+            is_approved: true,
+          }));
+
+          const { error: accessError } = await supabase
+            .from("student_course_access")
+            .insert(accessRecords);
+
+          if (accessError) {
+            console.error("Error granting free course access:", accessError);
+          }
+        }
       }
 
       setSuccess(true);
