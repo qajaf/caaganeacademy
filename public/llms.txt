@@ -1,0 +1,10 @@
+# Caagane Academy
+
+> Akadeemi online ah oo Soomaali ah oo baraysa Ingiriisi, xisaab, iyo xirfadaha kombuyuutarka, oo ay la socoto AI tutor.
+
+## Pages
+
+- [Home](/): Bogga hore ee Caagane Academy.
+- [Courses](/courses): Liiska casharada la heli karo.
+- [Register](/register): Iska diiwaangeli akoon cusub.
+- [Sign in](/auth): Gal akoonkaaga.
