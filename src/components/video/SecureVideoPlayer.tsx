@@ -18,7 +18,7 @@ const SecureVideoPlayer = ({ videoUrl, title, onProgress }: SecureVideoPlayerPro
   const [showCenterPlay, setShowCenterPlay] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Check if YouTube video
   const isYouTube = videoUrl.includes("youtube.com") || videoUrl.includes("youtu.be");

@@ -20,7 +20,7 @@ const ThemeToggle = () => {
   };
 
   return (
-    <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-9 w-9">
+    <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-9 w-9" aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}>
       {isDark ? (
         <Sun className="w-5 h-5" />
       ) : (
