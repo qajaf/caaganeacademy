@@ -6,7 +6,7 @@
 import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@0.23.0";
 
 // src/lib/mcp/tools/list-courses.ts
-import { defineTool, ToolError } from "npm:@lovable.dev/mcp-js@0.23.0";
+import { defineTool } from "npm:@lovable.dev/mcp-js@0.23.0";
 
 // src/lib/mcp/supabase.ts
 import { createClient } from "npm:@supabase/supabase-js@^2.88.0";
@@ -64,7 +64,7 @@ var list_courses_default = defineTool({
   handler: async (_args, ctx) => {
     const supabase = supabaseForUser(ctx);
     const { data, error } = await supabase.from("courses").select("id, title, description, instructor_name, price, is_free").eq("is_published", true).order("order_index").limit(100);
-    if (error) throw new ToolError(error.message);
+    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     const courses = (data ?? []).map((c) => ({
       id: c.id,
       title: c.title,
@@ -78,7 +78,7 @@ var list_courses_default = defineTool({
 });
 
 // src/lib/mcp/tools/list-playlists.ts
-import { defineTool as defineTool2, ToolError as ToolError2 } from "npm:@lovable.dev/mcp-js@0.23.0";
+import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.23.0";
 import { z } from "npm:zod@^3.25.76";
 var list_playlists_default = defineTool2({
   name: "list_playlists",
@@ -89,14 +89,14 @@ var list_playlists_default = defineTool2({
   handler: async ({ course_id }, ctx) => {
     const supabase = supabaseForUser(ctx);
     const { data, error } = await supabase.from("playlists").select("id, title, description").eq("course_id", course_id).order("order_index").limit(100);
-    if (error) throw new ToolError2(error.message);
+    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     const playlists = (data ?? []).map((p) => ({ id: p.id, title: p.title, description: p.description }));
     return { content: [{ type: "text", text: JSON.stringify(playlists) }], structuredContent: { playlists } };
   }
 });
 
 // src/lib/mcp/tools/list-lessons.ts
-import { defineTool as defineTool3, ToolError as ToolError3 } from "npm:@lovable.dev/mcp-js@0.23.0";
+import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@0.23.0";
 import { z as z2 } from "npm:zod@^3.25.76";
 var list_lessons_default = defineTool3({
   name: "list_lessons",
@@ -107,7 +107,7 @@ var list_lessons_default = defineTool3({
   handler: async ({ playlist_id }, ctx) => {
     const supabase = supabaseForUser(ctx);
     const { data, error } = await supabase.from("lessons").select("id, title, description, duration_minutes, is_locked, unlock_date").eq("playlist_id", playlist_id).eq("is_published", true).order("order_index").limit(200);
-    if (error) throw new ToolError3(error.message);
+    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     const lessons = (data ?? []).map((l) => ({
       id: l.id,
       title: l.title,
@@ -121,7 +121,7 @@ var list_lessons_default = defineTool3({
 });
 
 // src/lib/mcp/tools/my-progress.ts
-import { defineTool as defineTool4, ToolError as ToolError4 } from "npm:@lovable.dev/mcp-js@0.23.0";
+import { defineTool as defineTool4 } from "npm:@lovable.dev/mcp-js@0.23.0";
 var my_progress_default = defineTool4({
   name: "my_progress",
   title: "My lesson progress",
@@ -130,10 +130,10 @@ var my_progress_default = defineTool4({
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (_args, ctx) => {
     const userId = ctx.getUserId();
-    if (!userId) throw new ToolError4("Not authenticated");
+    if (!userId) return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
     const supabase = supabaseForUser(ctx);
     const { data, error } = await supabase.from("student_progress").select("lesson_id, is_completed, completed_at, last_watched_at, lessons(title)").eq("user_id", userId).order("last_watched_at", { ascending: false }).limit(200);
-    if (error) throw new ToolError4(error.message);
+    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     const progress = (data ?? []).map((p) => {
       const lesson = p.lessons;
       const title = Array.isArray(lesson) ? lesson[0]?.title ?? null : lesson?.title ?? null;

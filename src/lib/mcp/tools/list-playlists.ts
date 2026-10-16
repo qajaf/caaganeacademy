@@ -1,4 +1,4 @@
-import { defineTool, ToolError } from "@lovable.dev/mcp-js";
+import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { supabaseForUser } from "../supabase";
 
@@ -16,7 +16,7 @@ export default defineTool({
       .eq("course_id", course_id)
       .order("order_index")
       .limit(100);
-    if (error) throw new ToolError(error.message);
+    if (error) return { content: [{ type: "text" as const, text: error.message }], isError: true };
     const playlists = (data ?? []).map((p) => ({ id: p.id, title: p.title, description: p.description }));
     return { content: [{ type: "text", text: JSON.stringify(playlists) }], structuredContent: { playlists } };
   },

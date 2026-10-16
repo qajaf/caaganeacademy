@@ -1,4 +1,4 @@
-import { defineTool, ToolError } from "@lovable.dev/mcp-js";
+import { defineTool } from "@lovable.dev/mcp-js";
 import { supabaseForUser } from "../supabase";
 
 export default defineTool({
@@ -15,7 +15,7 @@ export default defineTool({
       .eq("is_published", true)
       .order("order_index")
       .limit(100);
-    if (error) throw new ToolError(error.message);
+    if (error) return { content: [{ type: "text" as const, text: error.message }], isError: true };
     const courses = (data ?? []).map((c) => ({
       id: c.id,
       title: c.title,
