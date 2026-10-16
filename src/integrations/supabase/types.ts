@@ -171,6 +171,41 @@ export type Database = {
         }
         Relationships: []
       }
+      course_requests: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_requests_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           created_at: string
@@ -275,6 +310,120 @@ export type Database = {
           word?: string
         }
         Relationships: []
+      }
+      exam_attempts: {
+        Row: {
+          answers: Json
+          created_at: string
+          exam_id: string
+          id: string
+          results: Json
+          score: number
+          total: number
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          created_at?: string
+          exam_id: string
+          id?: string
+          results?: Json
+          score?: number
+          total?: number
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          exam_id?: string
+          id?: string
+          results?: Json
+          score?: number
+          total?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_attempts_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exam_questions: {
+        Row: {
+          correct_index: number
+          created_at: string
+          exam_id: string
+          id: string
+          options: Json
+          order_index: number
+          question: string
+        }
+        Insert: {
+          correct_index?: number
+          created_at?: string
+          exam_id: string
+          id?: string
+          options?: Json
+          order_index?: number
+          question: string
+        }
+        Update: {
+          correct_index?: number
+          created_at?: string
+          exam_id?: string
+          id?: string
+          options?: Json
+          order_index?: number
+          question?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_questions_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exams: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          is_published: boolean
+          title: string
+          week_label: string | null
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          title: string
+          week_label?: string | null
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          title?: string
+          week_label?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exams_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lesson_notes: {
         Row: {
@@ -595,6 +744,50 @@ export type Database = {
           },
         ]
       }
+      student_group_members: {
+        Row: {
+          created_at: string
+          group_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "student_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_groups: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       student_notes: {
         Row: {
           content: string
@@ -730,6 +923,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_exam_questions: {
+        Args: { _exam_id: string }
+        Returns: {
+          id: string
+          options: Json
+          order_index: number
+          question: string
+        }[]
+      }
       has_course_access: {
         Args: { _course_id: string; _user_id: string }
         Returns: boolean
@@ -746,6 +948,25 @@ export type Database = {
         Returns: boolean
       }
       is_approved: { Args: { _user_id: string }; Returns: boolean }
+      submit_exam: {
+        Args: { _answers: Json; _exam_id: string }
+        Returns: {
+          answers: Json
+          created_at: string
+          exam_id: string
+          id: string
+          results: Json
+          score: number
+          total: number
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "exam_attempts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       app_role: "admin" | "student"
